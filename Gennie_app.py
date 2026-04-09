@@ -2,9 +2,6 @@ import streamlit as st
 import requests
 from datetime import date
 
-# -----------------------
-# CONFIG
-# -----------------------
 SPORT_KEY = st.secrets.get("API_KEY")
 ODDS_KEY = st.secrets.get("ODDS_KEY")
 
@@ -16,17 +13,18 @@ HEADERS = {
 }
 
 # -----------------------
-# FETCH MATCHES
+# SPORTAPI
 # -----------------------
-def fetch_matches():
+def fetch_sportapi():
     today = date.today().strftime("%Y-%m-%d")
 
     try:
         r = requests.get(
             f"{BASE}/api/v1/sport/football/scheduled-events/{today}",
             headers=HEADERS,
-            timeout=15
+            timeout=10
         )
+
         data = r.json()
         events = data.get("events", [])
 
@@ -35,7 +33,6 @@ def fetch_matches():
         for e in events:
             try:
                 matches.append({
-                    "id": e["id"],
                     "home": e["homeTeam"]["name"],
                     "away": e["awayTeam"]["name"],
                     "league": e["tournament"]["name"],
@@ -50,55 +47,38 @@ def fetch_matches():
         return []
 
 # -----------------------
-# FETCH ODDS
+# ODDS API (FALLBACK)
 # -----------------------
-def fetch_odds():
-    url = f"https://api.the-odds-api.com/v4/sports/soccer/odds/?apiKey={ODDS_KEY}&regions=eu&markets=h2h"
+def fetch_odds_fallback():
+    url = f"https://api.the-odds-api.com/v4/sports/soccer/odds/?apiKey={ODDS_KEY}&regions=eu"
 
-    odds_map = {}
+    matches = []
 
     try:
         r = requests.get(url, timeout=10)
 
         if r.status_code != 200:
-            return {}
+            return []
 
         data = r.json()
 
         for g in data:
-            key = f"{g['home_team']} vs {g['away_team']}"
+            matches.append({
+                "home": g["home_team"],
+                "away": g["away_team"],
+                "league": g.get("sport_title", "Unknown"),
+                "country": "Unknown"
+            })
 
-            try:
-                outcomes = g["bookmakers"][0]["markets"][0]["outcomes"]
-
-                odds_map[key] = {
-                    "home": outcomes[0]["price"],
-                    "away": outcomes[1]["price"]
-                }
-            except:
-                continue
-
-        return odds_map
+        return matches
 
     except:
-        return {}
+        return []
 
 # -----------------------
-# FILTRO LIGAS
+# GENIE ENGINE REAL (LO IMPORTANTE)
 # -----------------------
-def filter_matches(matches):
-    leagues = [
-        "Premier League","LaLiga","Serie A",
-        "Bundesliga","Ligue 1",
-        "UEFA Europa League","UEFA Champions League",
-        "Copa Libertadores","Copa Sudamericana"
-    ]
-    return [m for m in matches if m["league"] in leagues]
-
-# -----------------------
-# GENIE ENGINE (NARRATIVO)
-# -----------------------
-def genie_analysis(match, odds):
+def genie(match):
 
     home = match["home"]
     away = match["away"]
@@ -106,55 +86,48 @@ def genie_analysis(match, odds):
     attacking = ["Liverpool","Atalanta","Leverkusen","Brighton"]
     defensive = ["Getafe","Torino"]
 
-    # perfil
     if any(t in home for t in attacking) or any(t in away for t in attacking):
         tempo = "High tempo"
-        strategy = "Lay Under / Over goals"
-        confidence = 8
+        angle = "Goals / Over markets"
+        risk = "Medium"
     elif any(t in home for t in defensive) and any(t in away for t in defensive):
-        tempo = "Low block"
-        strategy = "Wait / Possible draw"
-        confidence = 4
+        tempo = "Low tempo"
+        angle = "Draw / Under"
+        risk = "Low"
     else:
         tempo = "Balanced"
-        strategy = "Momentum trading"
-        confidence = 6
+        angle = "Momentum / Match odds"
+        risk = "Controlled"
 
-    if odds:
-        confidence += 1
+    # TEXTO GENIE (ESTO ES LO CLAVE)
+    analysis = f"""
+After weighing up the data, here’s how I’d approach it:
 
-    # narrativa tipo Genie
-    text = f"""
-    After weighing up the data, here's how I'd play it:
+📊 Match: {home} vs {away}
 
-    🔹 Strategy: Momentum Method  
-    🔹 Market: Match Odds / Goals  
+🔎 Expected Pattern:
+This game projects as a **{tempo} contest**, where the tempo will define trading opportunities.
 
-    📊 Rationale:  
-    This fixture between {home} and {away} projects as a **{tempo} match**.  
-    The tactical setup suggests that the tempo will define the opportunity window.
+⚙️ Tactical Expectation:
+One side is likely to establish early control, but market confirmation is key.
 
-    📈 Market Insight:  
-    {'The presence of live odds indicates a reactive market.' if odds else 'Limited odds data – caution advised.'}
+📈 Market Behavior:
+Expect price movement once the first real momentum shift appears.
 
-    ⏱ Entry Plan:  
-    Wait first 10–15 minutes to confirm tempo.
+⏱ Entry Guidance:
+Wait 10–15 minutes → confirm intensity before involvement.
 
-    💰 Exit Plan:  
-    Trade the first major market movement (goal / pressure shift).
+💰 Trade Idea:
+Focus on **{angle}** depending on how early phases develop.
 
-    ⚠️ Risk Level:  
-    {'Medium' if confidence >=7 else 'Controlled'}
+🛑 Risk Profile:
+{risk} – avoid forcing entry without confirmation.
 
-    """
+📌 Key Insight:
+This is not a pre-match edge — it’s a **reaction-based trade setup**.
+"""
 
-    return {
-        "confidence": confidence,
-        "strategy": strategy,
-        "tempo": tempo,
-        "text": text,
-        "tradeable": confidence >= 7
-    }
+    return analysis
 
 # -----------------------
 # UI
@@ -162,82 +135,32 @@ def genie_analysis(match, odds):
 st.set_page_config(layout="wide")
 st.title("🔥 GENIE PRO REAL")
 
-matches = fetch_matches()
+matches = fetch_sportapi()
+
+# FALLBACK
+if not matches:
+    st.warning("SportAPI empty → using OddsAPI fallback")
+    matches = fetch_odds_fallback()
 
 if not matches:
-    st.error("No matches from API")
+    st.error("No matches available today")
     st.stop()
 
-matches = filter_matches(matches)
-odds_data = fetch_odds()
-
 # -----------------------
-# BUILD DATA
+# SELECTOR
 # -----------------------
-data = []
-
-for m in matches:
-    key = f"{m['home']} vs {m['away']}"
-    odds = odds_data.get(key)
-
-    analysis = genie_analysis(m, odds)
-
-    data.append({
-        "match": key,
-        "analysis": analysis,
-        "odds": odds,
-        "raw": m
-    })
-
-# -----------------------
-# FILTRO PRO
-# -----------------------
-tradeable = [d for d in data if d["analysis"]["tradeable"]]
-
-if not tradeable:
-    st.warning("No strong edges → fallback to all matches")
-    tradeable = data
-
-# -----------------------
-# RANKING
-# -----------------------
-ranked = sorted(tradeable, key=lambda x: x["analysis"]["confidence"], reverse=True)
-
-st.markdown("## 🏆 TOP MATCHES")
-for i, r in enumerate(ranked[:5]):
-    st.write(f"{i+1}. {r['match']} → {r['analysis']['confidence']}")
-
-# -----------------------
-# SELECTOR SEGURO
-# -----------------------
-options = [d["match"] for d in ranked]
-
-if not options:
-    st.error("No matches available")
-    st.stop()
+options = [f"{m['home']} vs {m['away']}" for m in matches]
 
 selected = st.selectbox("Selecciona partido", options)
 
-sel = next((d for d in ranked if d["match"] == selected), None)
-
-if not sel:
-    st.stop()
+sel = next((m for m in matches if f"{m['home']} vs {m['away']}" == selected), None)
 
 # -----------------------
-# OUTPUT GENIE STYLE
+# OUTPUT
 # -----------------------
 st.subheader(selected)
 
-st.write(f"League: {sel['raw']['league']} ({sel['raw']['country']})")
+st.write(f"League: {sel['league']} ({sel['country']})")
 
-st.markdown("### 💰 Odds")
-st.write(sel["odds"] if sel["odds"] else "No odds available")
-
-st.markdown("### 🧠 Genie Insight")
-st.write(sel["analysis"]["text"])
-
-st.markdown("### 📈 Confidence")
-st.write(sel["analysis"]["confidence"])
-
-st.markdown("### ⚠️ Tradeable")
-st.write("YES" if sel["analysis"]["tradeable"] else "NO")
+st.markdown("### 🧠 Genie Analysis")
+st.write(genie(sel))
