@@ -1,241 +1,237 @@
 import streamlit as st
 import requests
 from datetime import datetime
-import json
 import os
 
 # -----------------------
 # CONFIG
 # -----------------------
-API_KEY = os.getenv("API_KEY")  # usar Streamlit Secrets
+API_KEY = st.secrets.get("API_KEY")
+ODDS_KEY = st.secrets.get("ODDS_KEY")
 
-URL_FIXTURES = "https://api-football-v1.p.rapidapi.com/v3/fixtures"
-URL_ODDS = "https://api-football-v1.p.rapidapi.com/v3/odds"
-
-HEADERS = {
-    "X-RapidAPI-Key": API_KEY,
-    "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
-}
-
-MODEL_FILE = "model_feedback.json"
-
-# -----------------------
-# MODEL MEMORY
-# -----------------------
-def load_model():
-    if os.path.exists(MODEL_FILE):
-        with open(MODEL_FILE, "r") as f:
-            return json.load(f)
-    return {"HIGH TEMPO": 1.0, "BALANCED": 1.0, "LOW BLOCK": 1.0}
-
-def save_model(model):
-    with open(MODEL_FILE, "w") as f:
-        json.dump(model, f)
-
-model_weights = load_model()
-
-# -----------------------
-# FALLBACK MATCHES
-# -----------------------
-def fallback_matches():
-    return [
-        {"id": 1, "league": "Europa League", "home": "Bologna", "away": "Aston Villa", "kickoff": "20:00"},
-        {"id": 2, "league": "Europa League", "home": "Freiburg", "away": "Celta Vigo", "kickoff": "18:00"},
-        {"id": 3, "league": "Conference League", "home": "Rayo Vallecano", "away": "AEK", "kickoff": "19:00"},
-    ]
+DEBUG = False  # poner True si quieres ver errores
 
 # -----------------------
 # FETCH MATCHES
 # -----------------------
 def fetch_matches():
+    url = "https://api-football-v1.p.rapidapi.com/v3/fixtures"
+
+    headers = {
+        "X-RapidAPI-Key": API_KEY,
+        "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
+    }
+
     today = datetime.now().strftime("%Y-%m-%d")
-    params = {"date": today, "timezone": "America/Mexico_City"}
 
     try:
-        res = requests.get(URL_FIXTURES, headers=HEADERS, params=params, timeout=15)
+        res = requests.get(url, headers=headers, params={"date": today}, timeout=15)
+
+        if DEBUG:
+            st.write("STATUS:", res.status_code)
+            st.write(res.text[:500])
 
         if res.status_code != 200:
-            return fallback_matches()
+            return []
 
         data = res.json()
 
-        if "response" not in data:
-            return fallback_matches()
+        if "response" not in data or not data["response"]:
+            return []
 
         matches = []
 
         for m in data["response"]:
             matches.append({
-                "id": m["fixture"]["id"],
-                "league": m["league"]["name"],
                 "home": m["teams"]["home"]["name"],
                 "away": m["teams"]["away"]["name"],
+                "league": m["league"]["name"],
                 "kickoff": m["fixture"]["date"]
             })
 
         return matches
 
-    except:
-        return fallback_matches()
+    except Exception as e:
+        if DEBUG:
+            st.write("ERROR:", e)
+        return []
 
 # -----------------------
-# FETCH ODDS
+# FETCH ODDS (ODDS API)
 # -----------------------
-def fetch_odds(fixture_id):
+def fetch_odds():
+    url = f"https://api.the-odds-api.com/v4/sports/soccer/odds/?apiKey={ODDS_KEY}&regions=eu&markets=h2h"
+
+    odds_dict = {}
+
     try:
-        params = {"fixture": fixture_id}
-        res = requests.get(URL_ODDS, headers=HEADERS, params=params, timeout=10)
+        res = requests.get(url, timeout=10)
+
+        if res.status_code != 200:
+            return {}
+
         data = res.json()
 
-        if "response" not in data or not data["response"]:
-            return {"home": None, "draw": None, "away": None}
+        for game in data:
+            key = f"{game['home_team']} vs {game['away_team']}"
 
-        bets = data["response"][0]["bookmakers"][0]["bets"]
+            try:
+                market = game["bookmakers"][0]["markets"][0]["outcomes"]
 
-        for b in bets:
-            if b["name"] == "Match Winner":
-                odds = b["values"]
-                return {
-                    "home": float(odds[0]["odd"]),
-                    "draw": float(odds[1]["odd"]),
-                    "away": float(odds[2]["odd"])
+                odds_dict[key] = {
+                    "home": market[0]["price"],
+                    "away": market[1]["price"]
                 }
+            except:
+                continue
+
+        return odds_dict
 
     except:
-        pass
-
-    return {"home": None, "draw": None, "away": None}
+        return {}
 
 # -----------------------
-# GENIE ENGINE
+# CLASSIFICATION ENGINE
 # -----------------------
-def classify_match(home, away):
-    offensive = ["Atalanta", "Leverkusen", "Liverpool", "Brighton", "Fiorentina", "Aston Villa"]
-    defensive = ["Getafe", "Torino", "Strasbourg"]
+def classify(home, away):
+    attack = ["Liverpool", "Leverkusen", "Atalanta", "Brighton", "Fiorentina"]
+    defense = ["Getafe", "Torino", "Strasbourg"]
 
-    if any(t in home for t in offensive) or any(t in away for t in offensive):
+    if any(t in home for t in attack) or any(t in away for t in attack):
         return "HIGH TEMPO"
-    elif any(t in home for t in defensive) and any(t in away for t in defensive):
+    elif any(t in home for t in defense) and any(t in away for t in defense):
         return "LOW BLOCK"
     else:
         return "BALANCED"
 
+# -----------------------
+# ANALYSIS ENGINE
+# -----------------------
 def analyze(match, odds):
-    game_type = classify_match(match["home"], match["away"])
+    game_type = classify(match["home"], match["away"])
 
-    if game_type == "HIGH TEMPO":
-        strategy = "Lay Under 2.5 / Over trading"
-        confidence = 8
-    elif game_type == "LOW BLOCK":
-        strategy = "Wait / Draw angle"
-        confidence = 5
-    else:
-        strategy = "Momentum trading"
-        confidence = 6
+    base_score = {
+        "HIGH TEMPO": 8,
+        "BALANCED": 6,
+        "LOW BLOCK": 4
+    }[game_type]
 
-    if odds["home"] and odds["home"] < 2:
-        confidence += 1
-
-    confidence *= model_weights.get(game_type, 1)
+    # boost si hay cuotas reales
+    if odds:
+        base_score += 1
 
     return {
         "type": game_type,
-        "strategy": strategy,
-        "confidence": round(confidence, 1),
-        "prophecy": f"Partido {game_type} condicionado por ritmo y primer gol.",
-        "volatility": "HIGH" if game_type == "HIGH TEMPO" else "MEDIUM",
-        "draw_risk": "HIGH" if game_type == "LOW BLOCK" else "MEDIUM",
-        "early_goal": "HIGH" if game_type == "HIGH TEMPO" else "LOW"
+        "confidence": base_score,
+        "strategy": {
+            "HIGH TEMPO": "Lay Under / Over trading",
+            "BALANCED": "Momentum Match Odds",
+            "LOW BLOCK": "Wait / Draw"
+        }[game_type],
+        "prophecy": f"Partido {game_type} condicionado por ritmo, presión y primer gol."
     }
-
-# -----------------------
-# RANKING
-# -----------------------
-def rank_matches(data):
-    return sorted(data, key=lambda x: x["analysis"]["confidence"], reverse=True)
 
 # -----------------------
 # UI
 # -----------------------
 st.set_page_config(layout="wide")
-st.title("🔥 Football Trading Genie PRO")
+st.title("🔥 GENIE PRO REAL")
 
 matches = fetch_matches()
 
+# -----------------------
+# FALLBACK INTELIGENTE
+# -----------------------
 if not matches:
-    st.error("No matches found")
-    st.stop()
+    st.warning("⚠️ API sin datos → usando partidos simulados")
 
+    matches = [
+        {"home": "Liverpool", "away": "Brighton", "league": "Premier League", "kickoff": "20:00"},
+        {"home": "Atalanta", "away": "Roma", "league": "Serie A", "kickoff": "18:00"},
+        {"home": "Leverkusen", "away": "Dortmund", "league": "Bundesliga", "kickoff": "19:30"},
+    ]
+
+# -----------------------
+# ODDS
+# -----------------------
+odds_data = fetch_odds()
+
+# -----------------------
+# BUILD DATASET
+# -----------------------
 data = []
 
 for m in matches:
-    odds = fetch_odds(m["id"])
+    key = f"{m['home']} vs {m['away']}"
+    odds = odds_data.get(key)
+
     analysis = analyze(m, odds)
 
     data.append({
-        "match": f"{m['home']} vs {m['away']}",
-        "league": m["league"],
-        "raw": m,
+        "match": key,
         "analysis": analysis,
-        "odds": odds
+        "odds": odds,
+        "raw": m
     })
 
-# ranking
-ranked = rank_matches(data)
+# -----------------------
+# VALIDACIÓN FINAL
+# -----------------------
+if not data:
+    st.error("No matches available")
+    st.stop()
+
+# -----------------------
+# RANKING
+# -----------------------
+ranked = sorted(data, key=lambda x: x["analysis"]["confidence"], reverse=True)
 
 st.markdown("## 🏆 TOP MATCHES")
 for i, r in enumerate(ranked[:5]):
     st.write(f"{i+1}. {r['match']} → Score: {r['analysis']['confidence']}")
 
-# selector
+# -----------------------
+# SELECTOR SEGURO
+# -----------------------
 options = [d["match"] for d in data]
+
+if not options:
+    st.warning("No matches to display")
+    st.stop()
+
 selected = st.selectbox("Selecciona partido", options)
 
-selected_match = next(d for d in data if d["match"] == selected)
+# -----------------------
+# SAFE MATCH FIND
+# -----------------------
+sel = next((d for d in data if d["match"] == selected), None)
 
-m = selected_match["raw"]
-a = selected_match["analysis"]
-o = selected_match["odds"]
+if not sel:
+    st.error("Match not found")
+    st.stop()
 
+# -----------------------
 # OUTPUT
+# -----------------------
 st.subheader(selected)
 
-st.write(f"League: {m['league']}")
-st.write(f"Kickoff: {m['kickoff']}")
+st.write(f"League: {sel['raw']['league']}")
+st.write(f"Kickoff: {sel['raw']['kickoff']}")
 
 st.markdown("### 💰 Odds")
-st.write(o)
+if sel["odds"]:
+    st.write(sel["odds"])
+else:
+    st.write("No odds available")
 
-st.markdown("### 🔮 Genie’s Prophecy")
-st.write(a["prophecy"])
+st.markdown("### 🔮 Genie Insight")
+st.write(sel["analysis"]["prophecy"])
 
-st.markdown("### 📊 Match Dynamics")
-st.write(f"Type: {a['type']}")
-st.write(f"Volatility: {a['volatility']}")
-st.write(f"Draw Risk: {a['draw_risk']}")
-st.write(f"Early Goal: {a['early_goal']}")
+st.markdown("### 📊 Match Type")
+st.write(sel["analysis"]["type"])
 
 st.markdown("### 🎯 Strategy")
-st.write(a["strategy"])
+st.write(sel["analysis"]["strategy"])
 
 st.markdown("### 📈 Confidence")
-st.write(a["confidence"])
-
-st.markdown("### 📋 Trading Plan")
-st.write("Entry: 10–25 min")
-st.write("Trigger: ritmo + presión")
-st.write("Exit: gol")
-st.write("No Trade: partido muerto")
-
-# -----------------------
-# LEARNING
-# -----------------------
-st.markdown("### 🧠 Feedback")
-
-if st.button("👍 Buen análisis"):
-    model_weights[a["type"]] *= 1.05
-    save_model(model_weights)
-
-if st.button("👎 Mal análisis"):
-    model_weights[a["type"]] *= 0.95
-    save_model(model_weights)
+st.write(sel["analysis"]["confidence"])
