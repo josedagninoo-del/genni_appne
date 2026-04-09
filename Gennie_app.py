@@ -1,6 +1,8 @@
 import streamlit as st
 import requests
 from datetime import date
+import json
+import os
 
 SPORT_KEY = st.secrets.get("API_KEY")
 ODDS_KEY = st.secrets.get("ODDS_KEY")
@@ -11,6 +13,21 @@ HEADERS = {
     "X-RapidAPI-Key": SPORT_KEY,
     "X-RapidAPI-Host": "sportapi7.p.rapidapi.com",
 }
+
+CACHE_FILE = "matches_cache.json"
+
+# -----------------------
+# CACHE SAVE / LOAD
+# -----------------------
+def save_cache(data):
+    with open(CACHE_FILE, "w") as f:
+        json.dump(data, f)
+
+def load_cache():
+    if os.path.exists(CACHE_FILE):
+        with open(CACHE_FILE, "r") as f:
+            return json.load(f)
+    return []
 
 # -----------------------
 # SPORTAPI
@@ -25,11 +42,9 @@ def fetch_sportapi():
             timeout=10
         )
 
-        data = r.json()
-        events = data.get("events", [])
+        events = r.json().get("events", [])
 
         matches = []
-
         for e in events:
             try:
                 matches.append({
@@ -41,42 +56,68 @@ def fetch_sportapi():
             except:
                 continue
 
+        if matches:
+            save_cache(matches)
+
         return matches
 
     except:
         return []
 
 # -----------------------
-# ODDS API (FALLBACK)
+# ODDS API MULTI
 # -----------------------
-def fetch_odds_fallback():
-    url = f"https://api.the-odds-api.com/v4/sports/soccer/odds/?apiKey={ODDS_KEY}&regions=eu"
+def fetch_odds():
+    sports = [
+        "soccer_epl",
+        "soccer_spain_la_liga",
+        "soccer_italy_serie_a",
+        "soccer_germany_bundesliga",
+        "soccer_france_ligue_one",
+        "soccer_uefa_champs_league",
+        "soccer_uefa_europa_league"
+    ]
 
     matches = []
 
-    try:
-        r = requests.get(url, timeout=10)
+    for sport in sports:
+        try:
+            url = f"https://api.the-odds-api.com/v4/sports/{sport}/odds/?apiKey={ODDS_KEY}&regions=eu&markets=h2h"
+            r = requests.get(url, timeout=10)
 
-        if r.status_code != 200:
-            return []
+            if r.status_code != 200:
+                continue
 
-        data = r.json()
+            data = r.json()
 
-        for g in data:
-            matches.append({
-                "home": g["home_team"],
-                "away": g["away_team"],
-                "league": g.get("sport_title", "Unknown"),
-                "country": "Unknown"
-            })
+            for g in data:
+                matches.append({
+                    "home": g["home_team"],
+                    "away": g["away_team"],
+                    "league": g.get("sport_title", sport),
+                    "country": "Unknown"
+                })
 
-        return matches
+        except:
+            continue
 
-    except:
-        return []
+    if matches:
+        save_cache(matches)
+
+    return matches
 
 # -----------------------
-# GENIE ENGINE REAL (LO IMPORTANTE)
+# FALLBACK FINAL
+# -----------------------
+def fallback_matches():
+    return [
+        {"home": "Liverpool", "away": "Brighton", "league": "Premier League", "country": "England"},
+        {"home": "Atalanta", "away": "Roma", "league": "Serie A", "country": "Italy"},
+        {"home": "Leverkusen", "away": "Dortmund", "league": "Bundesliga", "country": "Germany"}
+    ]
+
+# -----------------------
+# GENIE ENGINE (CLAVE)
 # -----------------------
 def genie(match):
 
@@ -99,52 +140,52 @@ def genie(match):
         angle = "Momentum / Match odds"
         risk = "Controlled"
 
-    # TEXTO GENIE (ESTO ES LO CLAVE)
-    analysis = f"""
+    return f"""
 After weighing up the data, here’s how I’d approach it:
 
 📊 Match: {home} vs {away}
 
 🔎 Expected Pattern:
-This game projects as a **{tempo} contest**, where the tempo will define trading opportunities.
+This game projects as a **{tempo} contest**, where tempo will dictate trading opportunities.
 
-⚙️ Tactical Expectation:
-One side is likely to establish early control, but market confirmation is key.
+⚙️ Tactical Outlook:
+Expect phases of control rather than constant dominance.
 
-📈 Market Behavior:
-Expect price movement once the first real momentum shift appears.
+📈 Market Behaviour:
+Price movement likely tied to first real momentum swing.
 
 ⏱ Entry Guidance:
-Wait 10–15 minutes → confirm intensity before involvement.
+Wait 10–15 minutes → confirm tempo before acting.
 
 💰 Trade Idea:
-Focus on **{angle}** depending on how early phases develop.
+Focus on **{angle}** depending on early match flow.
 
 🛑 Risk Profile:
-{risk} – avoid forcing entry without confirmation.
+{risk} — avoid forcing trades without confirmation.
 
 📌 Key Insight:
-This is not a pre-match edge — it’s a **reaction-based trade setup**.
+This is a **reaction-based setup**, not a pre-match edge.
 """
-
-    return analysis
 
 # -----------------------
 # UI
 # -----------------------
 st.set_page_config(layout="wide")
-st.title("🔥 GENIE PRO REAL")
+st.title("🔥 GENIE PRO REAL — BLINDADO")
 
 matches = fetch_sportapi()
 
-# FALLBACK
 if not matches:
-    st.warning("SportAPI empty → using OddsAPI fallback")
-    matches = fetch_odds_fallback()
+    st.warning("SportAPI empty → trying OddsAPI")
+    matches = fetch_odds()
 
 if not matches:
-    st.error("No matches available today")
-    st.stop()
+    st.warning("APIs empty → using cache")
+    matches = load_cache()
+
+if not matches:
+    st.warning("No cache → using fallback dataset")
+    matches = fallback_matches()
 
 # -----------------------
 # SELECTOR
