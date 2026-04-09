@@ -16,19 +16,18 @@ HEADERS = {
 }
 
 # -----------------------
-# FETCH MATCHES (SPORTAPI)
+# FETCH MATCHES
 # -----------------------
 def fetch_matches():
     today = date.today().strftime("%Y-%m-%d")
 
     try:
-        resp = requests.get(
+        r = requests.get(
             f"{BASE}/api/v1/sport/football/scheduled-events/{today}",
             headers=HEADERS,
             timeout=15
         )
-
-        data = resp.json()
+        data = r.json()
         events = data.get("events", [])
 
         matches = []
@@ -51,7 +50,7 @@ def fetch_matches():
         return []
 
 # -----------------------
-# FETCH ODDS (ODDS API)
+# FETCH ODDS
 # -----------------------
 def fetch_odds():
     url = f"https://api.the-odds-api.com/v4/sports/soccer/odds/?apiKey={ODDS_KEY}&regions=eu&markets=h2h"
@@ -59,18 +58,18 @@ def fetch_odds():
     odds_map = {}
 
     try:
-        res = requests.get(url, timeout=10)
+        r = requests.get(url, timeout=10)
 
-        if res.status_code != 200:
+        if r.status_code != 200:
             return {}
 
-        data = res.json()
+        data = r.json()
 
-        for game in data:
-            key = f"{game['home_team']} vs {game['away_team']}"
+        for g in data:
+            key = f"{g['home_team']} vs {g['away_team']}"
 
             try:
-                outcomes = game["bookmakers"][0]["markets"][0]["outcomes"]
+                outcomes = g["bookmakers"][0]["markets"][0]["outcomes"]
 
                 odds_map[key] = {
                     "home": outcomes[0]["price"],
@@ -88,65 +87,80 @@ def fetch_odds():
 # FILTRO LIGAS
 # -----------------------
 def filter_matches(matches):
-    good = [
-        "Premier League",
-        "LaLiga",
-        "Serie A",
-        "Bundesliga",
-        "Ligue 1",
-        "UEFA Europa League",
-        "UEFA Champions League",
-        "Copa Libertadores",
-        "Copa Sudamericana"
+    leagues = [
+        "Premier League","LaLiga","Serie A",
+        "Bundesliga","Ligue 1",
+        "UEFA Europa League","UEFA Champions League",
+        "Copa Libertadores","Copa Sudamericana"
     ]
-
-    return [m for m in matches if m["league"] in good]
+    return [m for m in matches if m["league"] in leagues]
 
 # -----------------------
-# GENIE ENGINE PRO (REAL)
+# GENIE ENGINE (NARRATIVO)
 # -----------------------
-def analyze(match, odds):
+def genie_analysis(match, odds):
 
     home = match["home"]
     away = match["away"]
 
-    attacking = ["Liverpool", "Atalanta", "Leverkusen", "Brighton"]
-    defensive = ["Getafe", "Torino"]
+    attacking = ["Liverpool","Atalanta","Leverkusen","Brighton"]
+    defensive = ["Getafe","Torino"]
 
-    # tipo de partido
+    # perfil
     if any(t in home for t in attacking) or any(t in away for t in attacking):
-        tempo = "HIGH"
-        score = 8
+        tempo = "High tempo"
+        strategy = "Lay Under / Over goals"
+        confidence = 8
     elif any(t in home for t in defensive) and any(t in away for t in defensive):
-        tempo = "LOW"
-        score = 4
+        tempo = "Low block"
+        strategy = "Wait / Possible draw"
+        confidence = 4
     else:
-        tempo = "MID"
-        score = 6
+        tempo = "Balanced"
+        strategy = "Momentum trading"
+        confidence = 6
 
-    # señal de mercado
     if odds:
-        score += 1
+        confidence += 1
 
-    # EDGE FILTER
-    tradeable = score >= 7
+    # narrativa tipo Genie
+    text = f"""
+    After weighing up the data, here's how I'd play it:
+
+    🔹 Strategy: Momentum Method  
+    🔹 Market: Match Odds / Goals  
+
+    📊 Rationale:  
+    This fixture between {home} and {away} projects as a **{tempo} match**.  
+    The tactical setup suggests that the tempo will define the opportunity window.
+
+    📈 Market Insight:  
+    {'The presence of live odds indicates a reactive market.' if odds else 'Limited odds data – caution advised.'}
+
+    ⏱ Entry Plan:  
+    Wait first 10–15 minutes to confirm tempo.
+
+    💰 Exit Plan:  
+    Trade the first major market movement (goal / pressure shift).
+
+    ⚠️ Risk Level:  
+    {'Medium' if confidence >=7 else 'Controlled'}
+
+    """
 
     return {
+        "confidence": confidence,
+        "strategy": strategy,
         "tempo": tempo,
-        "confidence": score,
-        "tradeable": tradeable,
-        "strategy": {
-            "HIGH": "Over / Lay Under",
-            "MID": "Momentum Match Odds",
-            "LOW": "Wait / No Trade"
-        }[tempo]
+        "text": text,
+        "tradeable": confidence >= 7
     }
 
 # -----------------------
 # UI
 # -----------------------
 st.set_page_config(layout="wide")
-st.title("🔥 GENIE PRO REAL (FULL SYSTEM)")
+st.title("🔥 GENIE PRO REAL")
 
 matches = fetch_matches()
 
@@ -155,7 +169,6 @@ if not matches:
     st.stop()
 
 matches = filter_matches(matches)
-
 odds_data = fetch_odds()
 
 # -----------------------
@@ -167,7 +180,7 @@ for m in matches:
     key = f"{m['home']} vs {m['away']}"
     odds = odds_data.get(key)
 
-    analysis = analyze(m, odds)
+    analysis = genie_analysis(m, odds)
 
     data.append({
         "match": key,
@@ -177,12 +190,12 @@ for m in matches:
     })
 
 # -----------------------
-# FILTRO PRO (CLAVE)
+# FILTRO PRO
 # -----------------------
 tradeable = [d for d in data if d["analysis"]["tradeable"]]
 
 if not tradeable:
-    st.warning("No strong edges today → showing all matches")
+    st.warning("No strong edges → fallback to all matches")
     tradeable = data
 
 # -----------------------
@@ -190,14 +203,18 @@ if not tradeable:
 # -----------------------
 ranked = sorted(tradeable, key=lambda x: x["analysis"]["confidence"], reverse=True)
 
-st.markdown("## 🏆 TOP TRADEABLE MATCHES")
+st.markdown("## 🏆 TOP MATCHES")
 for i, r in enumerate(ranked[:5]):
     st.write(f"{i+1}. {r['match']} → {r['analysis']['confidence']}")
 
 # -----------------------
-# SELECTOR
+# SELECTOR SEGURO
 # -----------------------
 options = [d["match"] for d in ranked]
+
+if not options:
+    st.error("No matches available")
+    st.stop()
 
 selected = st.selectbox("Selecciona partido", options)
 
@@ -207,20 +224,17 @@ if not sel:
     st.stop()
 
 # -----------------------
-# OUTPUT
+# OUTPUT GENIE STYLE
 # -----------------------
 st.subheader(selected)
 
 st.write(f"League: {sel['raw']['league']} ({sel['raw']['country']})")
 
 st.markdown("### 💰 Odds")
-st.write(sel["odds"] if sel["odds"] else "No odds")
+st.write(sel["odds"] if sel["odds"] else "No odds available")
 
-st.markdown("### 🔮 Match Type")
-st.write(sel["analysis"]["tempo"])
-
-st.markdown("### 🎯 Strategy")
-st.write(sel["analysis"]["strategy"])
+st.markdown("### 🧠 Genie Insight")
+st.write(sel["analysis"]["text"])
 
 st.markdown("### 📈 Confidence")
 st.write(sel["analysis"]["confidence"])
