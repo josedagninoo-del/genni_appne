@@ -1,206 +1,172 @@
 import streamlit as st
-import requests
+import pandas as pd
 from datetime import datetime
-import random
 
 st.set_page_config(layout="wide")
 
-# 🔐 KEYS
-SPORT_KEY = st.secrets.get("RAPIDAPI_KEY", "")
-ODDS_KEY = st.secrets.get("ODDS_API_KEY", "")
-
-
-# 🌍 FETCH FIXTURES (HOY + MAÑANA)
-def fetch_fixtures():
-
-    headers = {
-        "X-RapidAPI-Key": SPORT_KEY,
-        "X-RapidAPI-Host": "sportapi7.p.rapidapi.com"
-    }
-
-    all_matches = []
-
-    for day in ["today", "tomorrow"]:
-
-        url = f"https://sportapi7.p.rapidapi.com/api/v1/sport/football/scheduled-events/{day}"
-
-        try:
-            r = requests.get(url, headers=headers, timeout=15)
-            data = r.json()
-
-            for e in data.get("events", []):
-
-                tournament = e["tournament"]["uniqueTournament"]["name"]
-
-                # 🚫 filtro ligas basura
-                if "U" in tournament or "Women" in tournament:
-                    continue
-
-                home = e["homeTeam"]["name"]
-                away = e["awayTeam"]["name"]
-
-                country = e["tournament"]["category"]["name"]
-
-                ts = e["startTimestamp"]
-                kickoff = datetime.fromtimestamp(ts)
-
-                all_matches.append({
-                    "home": home,
-                    "away": away,
-                    "league": tournament,
-                    "country": country,
-                    "kickoff": kickoff.strftime("%Y-%m-%d %H:%M")
-                })
-
-        except:
-            continue
-
-    return all_matches
-
-
-# 💰 FETCH ODDS
-def fetch_odds():
-
-    sports = [
-        "soccer_epl",
-        "soccer_spain_la_liga",
-        "soccer_italy_serie_a",
-        "soccer_germany_bundesliga",
-        "soccer_france_ligue_one",
-        "soccer_uefa_champs_league",
-        "soccer_uefa_europa_league",
-        "soccer_mexico_ligamx",
-        "soccer_brazil_campeonato",
-        "soccer_argentina_primera_division",
-        "soccer_copa_libertadores",
-        "soccer_copa_sudamericana"
-    ]
-
-    odds_map = {}
-
-    for sport in sports:
-        try:
-            url = f"https://api.the-odds-api.com/v4/sports/{sport}/odds/?apiKey={ODDS_KEY}&regions=eu&markets=h2h"
-            r = requests.get(url, timeout=10)
-
-            if r.status_code != 200:
-                continue
-
-            data = r.json()
-
-            for g in data:
-                key = f"{g['home_team']} vs {g['away_team']}"
-                odds_map[key] = g.get("bookmakers", [])
-
-        except:
-            continue
-
-    return odds_map
-
-
-# 🧠 GENIE ANALYSIS (MEJORADO)
-def genie_analysis(match):
-
-    tempo = random.choice(["High Tempo", "Balanced", "Controlled"])
-    confidence = round(random.uniform(6.8, 9.3), 1)
-
-    strategy = random.choice([
-        "Momentum Entry",
-        "Lay The Draw",
-        "Over Reaction",
-        "Late Pressure",
-        "First Goal Momentum"
-    ])
-
-    home = match["home"]
-    away = match["away"]
-
-    analysis = f"""
-After weighing up the data, here's the professional read:
-
-📊 **Match Context**
-{home} vs {away} projects as a **{tempo} fixture**, where game rhythm and pressure cycles will dictate trading opportunities.
-
-⚡ **Tactical Dynamics**
-- Expect alternating phases of control rather than dominance
-- Transitional moments (post-goal) will be key
-- Both teams likely to generate volatility windows
-
-📈 **Market Behavior**
-- Early phase → slow odds adjustment
-- First goal → sharp market reaction
-- Mid game → directional bias emerges
-- Late game → pressure inefficiencies increase
-
-🎯 **Edge Insight**
-The edge is not prediction — it's identifying when the market lags behind real momentum.
-
-🧠 **Execution Framework**
-Wait for confirmation (tempo + pressure). Avoid early entries without validation.
-"""
-
-    return tempo, confidence, strategy, analysis
-
-
-# 🚀 UI
 st.title("🔥 GENIE PRO REAL")
 
-fixtures = fetch_fixtures()
+# =========================================================
+# 📥 LOAD FIXTURES (FUENTE REAL)
+# =========================================================
+@st.cache_data
+def load_data():
+    url = "https://www.football-data.co.uk/fixtures.csv"
+    df = pd.read_csv(url)
 
-# ❌ SIN FALLBACK FALSO
-if not fixtures:
-    st.error("No hay partidos disponibles (API issue o sin eventos hoy)")
+    df = df.dropna(subset=["HomeTeam", "AwayTeam", "PSH", "PSD", "PSA"])
+
+    return df
+
+df = load_data()
+
+if df.empty:
+    st.error("No fixtures available")
     st.stop()
 
-odds_map = fetch_odds()
+# =========================================================
+# 🧠 BUILD MATCH LIST
+# =========================================================
+matches = []
 
-# 🎯 SELECTOR
-options = [
-    f"{m['home']} vs {m['away']} | {m['league']} | {m['kickoff']}"
-    for m in fixtures
-]
+for _, row in df.iterrows():
+    match = f"{row['HomeTeam']} vs {row['AwayTeam']} | {row['Div']}"
+    matches.append(match)
 
-selected = st.selectbox("Selecciona partido", options)
+selected = st.selectbox("Selecciona partido", matches)
 
-match = fixtures[options.index(selected)]
+row = df.iloc[matches.index(selected)]
 
-tempo, confidence, strategy, analysis = genie_analysis(match)
+home = row["HomeTeam"]
+away = row["AwayTeam"]
+league = row["Div"]
 
-# 🧾 HEADER
-st.markdown("---")
-st.header(f"{match['home']} vs {match['away']}")
-st.write(f"🌍 {match['country']} — {match['league']}")
-st.write(f"⏰ {match['kickoff']}")
+psh = float(row["PSH"])
+psd = float(row["PSD"])
+psa = float(row["PSA"])
 
-# 📊 CONFIDENCE
-st.subheader("📊 Confidence Rating")
-st.write(f"⭐ {confidence} / 10")
+# =========================================================
+# 🧠 GENIE CORE ANALYSIS
+# =========================================================
 
-# ⚡ TEMPO
-st.subheader("⚡ Match Tempo")
-st.write(tempo)
+def analyze_match(psh, psd, psa):
 
-# 🧠 ANALYSIS
-st.subheader("🧠 Genie Analysis")
-st.markdown(analysis)
+    confidence = round(10 - ((psh + psa) / 2), 2)
 
-# 📈 STRATEGY
-st.subheader("📈 Trading Approach")
-st.info(strategy)
+    # 🎯 MARKET STRUCTURE
+    if psh < 1.80:
+        structure = "STRONG FAVORITE"
+        tempo = "CONTROLLED"
+        setup = "LAY DRAW / BACK FAVORITE"
 
-# 💰 ODDS
+    elif abs(psh - psa) < 0.40:
+        structure = "BALANCED"
+        tempo = "HIGH VARIANCE"
+        setup = "OVER 2.5 / BTTS"
+
+    elif psd > 3.60:
+        structure = "CHAOTIC"
+        tempo = "HIGH TEMPO"
+        setup = "LAY DRAW / LATE GOAL TRADE"
+
+    else:
+        structure = "SEMI-BALANCED"
+        tempo = "MEDIUM"
+        setup = "WAIT / READ MARKET"
+
+    # 💰 VALUE DETECTOR
+    implied_home = 1 / psh
+    implied_away = 1 / psa
+
+    if implied_home > 0.60:
+        value = "HOME VALUE"
+    elif implied_away > 0.45:
+        value = "AWAY VALUE"
+    else:
+        value = "NO CLEAR VALUE"
+
+    return {
+        "confidence": confidence,
+        "structure": structure,
+        "tempo": tempo,
+        "setup": setup,
+        "value": value
+    }
+
+analysis = analyze_match(psh, psd, psa)
+
+# =========================================================
+# 🎯 UI OUTPUT
+# =========================================================
+
+st.header(f"{home} vs {away}")
+
+st.write(f"🌍 League: {league}")
+
+# ❌ No fecha en dataset → se explica
+st.write("📅 Date: Not provided (source limitation)")
+st.write("⏰ Time: Not provided")
+
 st.subheader("💰 Odds")
+st.write(f"Home: {psh}")
+st.write(f"Draw: {psd}")
+st.write(f"Away: {psa}")
 
-key = f"{match['home']} vs {match['away']}"
+# =========================================================
+# 🧠 GENIE ANALYSIS (ESTILO REAL)
+# =========================================================
 
-if key in odds_map and odds_map[key]:
-    try:
-        bookmaker = odds_map[key][0]
-        outcomes = bookmaker["markets"][0]["outcomes"]
+st.subheader("🧠 Genie Analysis")
 
-        for o in outcomes:
-            st.write(f"{o['name']}: {o['price']}")
-    except:
-        st.write("Odds disponibles pero no parseadas correctamente")
-else:
-    st.write("No odds disponibles")
+st.markdown(f"""
+**📊 Match Structure:** {analysis['structure']}
+
+Este partido se define principalmente por la estructura del mercado.  
+Las cuotas indican cómo el mercado percibe la superioridad relativa.
+
+---
+
+**⚡ Tempo Esperado:** {analysis['tempo']}
+
+El ritmo esperado del partido viene determinado por la diferencia de fuerzas.  
+Esto afecta directamente la velocidad del mercado en vivo.
+
+---
+
+**💰 Value Detectado:** {analysis['value']}
+
+El análisis de probabilidades implícitas sugiere si existe ventaja estructural.  
+No siempre implica apuesta directa, sino contexto.
+
+---
+
+**🎯 Setup Sugerido:**
+
+👉 {analysis['setup']}
+
+Este NO es un pick.  
+Es un **escenario operativo esperado** basado en cómo se comporta el mercado típicamente bajo estas condiciones.
+
+---
+
+**📈 Lectura del Partido**
+
+- Si el favorito domina → el mercado tenderá a comprimir líneas rápidamente  
+- Si es balanceado → mayor volatilidad y oportunidades en goles  
+- Si es caótico → errores defensivos + transiciones = oportunidades tardías  
+
+---
+
+**🧠 Interpretación Tipo Trader**
+
+Este análisis no busca predecir el resultado.  
+Busca definir **cómo se moverá el mercado**.
+
+Tu ventaja está en ejecutar mejor que el mercado.
+""")
+
+# =========================================================
+# ⭐ CONFIDENCE
+# =========================================================
+st.subheader("⭐ Confidence Rating")
+st.write(f"{analysis['confidence']} / 10")
