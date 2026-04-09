@@ -15,42 +15,32 @@ DEBUG = False  # poner True si quieres ver errores
 # FETCH MATCHES
 # -----------------------
 def fetch_matches():
-    url = "https://api-football-v1.p.rapidapi.com/v3/fixtures"
+    today = date.today().strftime("%Y-%m-%d")
 
-    headers = {
-        "X-RapidAPI-Key": API_KEY,
-        "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
-    }
+    resp = requests.get(
+        f"{BASE}/api/v1/sport/football/scheduled-events/{today}",
+        headers=HEADERS
+    )
 
-    today = datetime.now().strftime("%Y-%m-%d")
+    data = resp.json()
+    events = data.get("events", [])
 
-    try:
-        res = requests.get(url, headers=headers, params={"date": today}, timeout=15)
+    matches = []
 
-        if DEBUG:
-            st.write("STATUS:", res.status_code)
-            st.write(res.text[:500])
-
-        if res.status_code != 200:
-            return []
-
-        data = res.json()
-
-        if "response" not in data or not data["response"]:
-            return []
-
-        matches = []
-
-        for m in data["response"]:
+    for e in events:
+        try:
             matches.append({
-                "home": m["teams"]["home"]["name"],
-                "away": m["teams"]["away"]["name"],
-                "league": m["league"]["name"],
-                "kickoff": m["fixture"]["date"]
+                "id": e["id"],
+                "home": e["homeTeam"]["name"],
+                "away": e["awayTeam"]["name"],
+                "league": e["tournament"]["name"],
+                "country": e["tournament"]["category"]["name"],
+                "kickoff": e.get("startTimestamp")
             })
+        except:
+            continue
 
-        return matches
-
+    return matches
     except Exception as e:
         if DEBUG:
             st.write("ERROR:", e)
