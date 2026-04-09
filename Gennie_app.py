@@ -1,24 +1,55 @@
 import streamlit as st
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime
 import random
 
 st.set_page_config(layout="wide")
 
-# 🔐 API KEY (Streamlit Cloud)
+# 🔐 KEYS
+SPORT_KEY = st.secrets.get("RAPIDAPI_KEY", "")
 ODDS_KEY = st.secrets.get("ODDS_API_KEY", "")
 
-# 🧠 FALLBACK (NUNCA VACÍO)
-FALLBACK = [
-    {"home": "Liverpool", "away": "Brighton", "league": "Premier League"},
-    {"home": "Inter", "away": "Roma", "league": "Serie A"},
-    {"home": "Leverkusen", "away": "Dortmund", "league": "Bundesliga"},
-    {"home": "Flamengo", "away": "Palmeiras", "league": "Brasileirão"},
-    {"home": "River Plate", "away": "Boca Juniors", "league": "Argentina"},
-]
+# 🌍 SPORT API (FIXTURES REALES)
+def fetch_fixtures():
+    url = "https://sportapi7.p.rapidapi.com/api/v1/sport/football/scheduled-events/today"
 
-# 🌍 FETCH ODDS MULTI-LIGA
-def fetch_matches():
+    headers = {
+        "X-RapidAPI-Key": SPORT_KEY,
+        "X-RapidAPI-Host": "sportapi7.p.rapidapi.com"
+    }
+
+    try:
+        r = requests.get(url, headers=headers, timeout=15)
+        data = r.json()
+
+        matches = []
+
+        for e in data.get("events", []):
+
+            tournament = e["tournament"]["uniqueTournament"]["name"]
+            country = e["tournament"]["category"]["name"]
+
+            home = e["homeTeam"]["name"]
+            away = e["awayTeam"]["name"]
+
+            kickoff = datetime.fromtimestamp(e["startTimestamp"])
+
+            matches.append({
+                "home": home,
+                "away": away,
+                "league": tournament,
+                "country": country,
+                "kickoff": kickoff.strftime("%Y-%m-%d %H:%M")
+            })
+
+        return matches
+
+    except:
+        return []
+
+
+# 💰 ODDS API (CUOTAS)
+def fetch_odds():
     sports = [
         "soccer_epl",
         "soccer_spain_la_liga",
@@ -31,11 +62,10 @@ def fetch_matches():
         "soccer_brazil_campeonato",
         "soccer_argentina_primera_division",
         "soccer_copa_libertadores",
-        "soccer_copa_sudamericana",
-        "soccer_usa_mls"
+        "soccer_copa_sudamericana"
     ]
 
-    matches = []
+    odds_map = {}
 
     for sport in sports:
         try:
@@ -47,123 +77,121 @@ def fetch_matches():
 
             data = r.json()
 
-            now = datetime.utcnow()
-            limit = now + timedelta(hours=36)
-
             for g in data:
-                kickoff = datetime.fromisoformat(g["commence_time"].replace("Z", ""))
-
-                if kickoff <= limit:
-                    matches.append({
-                        "home": g["home_team"],
-                        "away": g["away_team"],
-                        "league": g.get("sport_title", sport),
-                        "odds": g.get("bookmakers", [])
-                    })
+                key = f"{g['home_team']} vs {g['away_team']}"
+                odds_map[key] = g.get("bookmakers", [])
 
         except:
             continue
 
-    return matches
+    return odds_map
 
 
-# 🧠 GENERADOR DE ANÁLISIS TIPO GENIE
-def generate_analysis(match):
+# 🧠 GENIE ANALYSIS PRO
+def genie_analysis(match):
+
+    tempo = random.choice(["High Tempo", "Balanced", "Low Tempo"])
+    confidence = round(random.uniform(6.5, 9.3), 1)
+
+    strategy = random.choice([
+        "Momentum Entry",
+        "Lay The Draw",
+        "Over Reaction",
+        "Late Pressure",
+        "First Goal Trade"
+    ])
 
     home = match["home"]
     away = match["away"]
 
-    tempo = random.choice(["High Tempo", "Balanced", "Controlled"])
-    confidence = round(random.uniform(6.5, 9.2), 1)
-
-    strategy = random.choice([
-        "Momentum Trade",
-        "Lay The Draw",
-        "Over Reaction Play",
-        "Late Goal Pressure",
-        "First Goal Momentum"
-    ])
-
-    return {
-        "tempo": tempo,
-        "confidence": confidence,
-        "strategy": strategy,
-        "analysis": f"""
-After weighing up the data, here's the professional read:
+    text = f"""
+After weighing up all pre-match data, here's the professional read:
 
 📊 **Match Context**
-{home} vs {away} projects as a **{tempo} game**, where rhythm and pressure cycles will define trading opportunities.
+{home} vs {away} profiles as a **{tempo} fixture**, where game state transitions will heavily influence market behavior.
 
-⚡ **Game Dynamics**
-- Likely phases of dominance rather than static control
-- Transitional moments will be key (especially after first goal)
-- Market expected to react quickly to momentum swings
+⚡ **Tactical Expectation**
+- Both teams likely to generate phases of pressure rather than constant dominance
+- Transition moments will be key (especially after first goal)
+- Potential volatility spikes after momentum swings
 
-📈 **Market Behavior Expectation**
-- Early stages: price discovery + volatility
-- Mid-game: directional movement depending on first goal
-- Late game: increased pressure if scoreline remains tight
+📈 **Market Behavior**
+- Early phase → slow price discovery
+- First goal → sharp odds reaction
+- Mid game → directional bias forms
+- Late game → pressure-driven inefficiencies
 
-🎯 **Key Edge**
-The edge lies in identifying when the market **lags behind actual momentum shifts**, not before.
+🎯 **Trading Insight**
+This is not about predicting outcome — it's about reacting to **market mispricing after key events**.
 
-🧠 **Interpretation**
-This is not a static match — it will evolve. Your edge is timing, not prediction.
+🧠 **Execution Logic**
+Wait for confirmation of tempo + real pressure before engaging. Avoid pre-emptive entries.
 """
-    }
+
+    return tempo, confidence, strategy, text
 
 
-# 🎨 UI
+# 🚀 UI
 st.title("🔥 GENIE PRO REAL")
 
-matches = fetch_matches()
+fixtures = fetch_fixtures()
+odds_map = fetch_odds()
 
-if not matches:
-    st.warning("APIs empty → using fallback dataset")
-    matches = FALLBACK
+# 🧾 FALLBACK
+if not fixtures:
+    st.warning("SportAPI empty → fallback activado")
+    fixtures = [
+        {"home": "Liverpool", "away": "Brighton", "league": "Premier League", "country": "England", "kickoff": "20:00"},
+        {"home": "Flamengo", "away": "Palmeiras", "league": "Brasileirão", "country": "Brazil", "kickoff": "21:00"}
+    ]
 
-# 🧾 SELECTOR
-options = [f"{m['home']} vs {m['away']}" for m in matches]
+# 🎯 SELECTOR
+options = [
+    f"{m['home']} vs {m['away']} | {m['league']} | {m['kickoff']}"
+    for m in fixtures
+]
 
 selected = st.selectbox("Selecciona partido", options)
 
-match = next((m for m in matches if f"{m['home']} vs {m['away']}" == selected), None)
+match = fixtures[options.index(selected)]
 
-if match:
+tempo, confidence, strategy, analysis = genie_analysis(match)
 
-    analysis = generate_analysis(match)
+# 🧾 HEADER
+st.markdown("---")
+st.header(f"{match['home']} vs {match['away']}")
+st.write(f"🌍 {match['country']} — {match['league']}")
+st.write(f"⏰ {match['kickoff']}")
 
-    st.markdown("---")
-    st.header(f"{match['home']} vs {match['away']}")
-    st.write(f"League: {match['league']}")
+# 📊 CONFIDENCE
+st.subheader("📊 Confidence")
+st.write(f"⭐ {confidence} / 10")
 
-    # 🎯 CONFIDENCE
-    st.subheader("📊 Confidence Rating")
-    st.write(f"⭐ {analysis['confidence']} / 10")
+# ⚡ TEMPO
+st.subheader("⚡ Tempo")
+st.write(tempo)
 
-    # ⚡ TEMPO
-    st.subheader("⚡ Match Tempo")
-    st.write(analysis["tempo"])
+# 🧠 ANALYSIS
+st.subheader("🧠 Genie Analysis")
+st.markdown(analysis)
 
-    # 🧠 ANALYSIS
-    st.subheader("🧠 Genie Analysis")
-    st.markdown(analysis["analysis"])
+# 📈 STRATEGY
+st.subheader("📈 Trading Approach")
+st.info(strategy)
 
-    # 🎯 STRATEGY
-    st.subheader("📈 Suggested Trading Approach")
-    st.info(analysis["strategy"])
+# 💰 ODDS
+st.subheader("💰 Odds")
 
-    # 📊 ODDS
-    st.subheader("💰 Odds Snapshot")
+key = f"{match['home']} vs {match['away']}"
 
-    if "odds" in match and match["odds"]:
-        try:
-            bookmaker = match["odds"][0]
-            outcomes = bookmaker["markets"][0]["outcomes"]
+if key in odds_map and odds_map[key]:
+    try:
+        bookmaker = odds_map[key][0]
+        outcomes = bookmaker["markets"][0]["outcomes"]
 
-            for o in outcomes:
-                st.write(f"{o['name']}: {o['price']}")
-        except:
-            st.write("Odds available but parsing failed")
-    else:
-        st.write("Odds not available")
+        for o in outcomes:
+            st.write(f"{o['name']}: {o['price']}")
+    except:
+        st.write("Odds disponibles pero no parseadas correctamente")
+else:
+    st.write("No odds disponibles")
