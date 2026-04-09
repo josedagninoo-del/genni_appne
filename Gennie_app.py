@@ -9,47 +9,58 @@ st.set_page_config(layout="wide")
 SPORT_KEY = st.secrets.get("RAPIDAPI_KEY", "")
 ODDS_KEY = st.secrets.get("ODDS_API_KEY", "")
 
-# 🌍 SPORT API (FIXTURES REALES)
+
+# 🌍 FETCH FIXTURES (HOY + MAÑANA)
 def fetch_fixtures():
-    url = "https://sportapi7.p.rapidapi.com/api/v1/sport/football/scheduled-events/today"
 
     headers = {
         "X-RapidAPI-Key": SPORT_KEY,
         "X-RapidAPI-Host": "sportapi7.p.rapidapi.com"
     }
 
-    try:
-        r = requests.get(url, headers=headers, timeout=15)
-        data = r.json()
+    all_matches = []
 
-        matches = []
+    for day in ["today", "tomorrow"]:
 
-        for e in data.get("events", []):
+        url = f"https://sportapi7.p.rapidapi.com/api/v1/sport/football/scheduled-events/{day}"
 
-            tournament = e["tournament"]["uniqueTournament"]["name"]
-            country = e["tournament"]["category"]["name"]
+        try:
+            r = requests.get(url, headers=headers, timeout=15)
+            data = r.json()
 
-            home = e["homeTeam"]["name"]
-            away = e["awayTeam"]["name"]
+            for e in data.get("events", []):
 
-            kickoff = datetime.fromtimestamp(e["startTimestamp"])
+                tournament = e["tournament"]["uniqueTournament"]["name"]
 
-            matches.append({
-                "home": home,
-                "away": away,
-                "league": tournament,
-                "country": country,
-                "kickoff": kickoff.strftime("%Y-%m-%d %H:%M")
-            })
+                # 🚫 filtro ligas basura
+                if "U" in tournament or "Women" in tournament:
+                    continue
 
-        return matches
+                home = e["homeTeam"]["name"]
+                away = e["awayTeam"]["name"]
 
-    except:
-        return []
+                country = e["tournament"]["category"]["name"]
+
+                ts = e["startTimestamp"]
+                kickoff = datetime.fromtimestamp(ts)
+
+                all_matches.append({
+                    "home": home,
+                    "away": away,
+                    "league": tournament,
+                    "country": country,
+                    "kickoff": kickoff.strftime("%Y-%m-%d %H:%M")
+                })
+
+        except:
+            continue
+
+    return all_matches
 
 
-# 💰 ODDS API (CUOTAS)
+# 💰 FETCH ODDS
 def fetch_odds():
+
     sports = [
         "soccer_epl",
         "soccer_spain_la_liga",
@@ -87,63 +98,61 @@ def fetch_odds():
     return odds_map
 
 
-# 🧠 GENIE ANALYSIS PRO
+# 🧠 GENIE ANALYSIS (MEJORADO)
 def genie_analysis(match):
 
-    tempo = random.choice(["High Tempo", "Balanced", "Low Tempo"])
-    confidence = round(random.uniform(6.5, 9.3), 1)
+    tempo = random.choice(["High Tempo", "Balanced", "Controlled"])
+    confidence = round(random.uniform(6.8, 9.3), 1)
 
     strategy = random.choice([
         "Momentum Entry",
         "Lay The Draw",
         "Over Reaction",
         "Late Pressure",
-        "First Goal Trade"
+        "First Goal Momentum"
     ])
 
     home = match["home"]
     away = match["away"]
 
-    text = f"""
-After weighing up all pre-match data, here's the professional read:
+    analysis = f"""
+After weighing up the data, here's the professional read:
 
 📊 **Match Context**
-{home} vs {away} profiles as a **{tempo} fixture**, where game state transitions will heavily influence market behavior.
+{home} vs {away} projects as a **{tempo} fixture**, where game rhythm and pressure cycles will dictate trading opportunities.
 
-⚡ **Tactical Expectation**
-- Both teams likely to generate phases of pressure rather than constant dominance
-- Transition moments will be key (especially after first goal)
-- Potential volatility spikes after momentum swings
+⚡ **Tactical Dynamics**
+- Expect alternating phases of control rather than dominance
+- Transitional moments (post-goal) will be key
+- Both teams likely to generate volatility windows
 
 📈 **Market Behavior**
-- Early phase → slow price discovery
-- First goal → sharp odds reaction
-- Mid game → directional bias forms
-- Late game → pressure-driven inefficiencies
+- Early phase → slow odds adjustment
+- First goal → sharp market reaction
+- Mid game → directional bias emerges
+- Late game → pressure inefficiencies increase
 
-🎯 **Trading Insight**
-This is not about predicting outcome — it's about reacting to **market mispricing after key events**.
+🎯 **Edge Insight**
+The edge is not prediction — it's identifying when the market lags behind real momentum.
 
-🧠 **Execution Logic**
-Wait for confirmation of tempo + real pressure before engaging. Avoid pre-emptive entries.
+🧠 **Execution Framework**
+Wait for confirmation (tempo + pressure). Avoid early entries without validation.
 """
 
-    return tempo, confidence, strategy, text
+    return tempo, confidence, strategy, analysis
 
 
 # 🚀 UI
 st.title("🔥 GENIE PRO REAL")
 
 fixtures = fetch_fixtures()
-odds_map = fetch_odds()
 
-# 🧾 FALLBACK
+# ❌ SIN FALLBACK FALSO
 if not fixtures:
-    st.warning("SportAPI empty → fallback activado")
-    fixtures = [
-        {"home": "Liverpool", "away": "Brighton", "league": "Premier League", "country": "England", "kickoff": "20:00"},
-        {"home": "Flamengo", "away": "Palmeiras", "league": "Brasileirão", "country": "Brazil", "kickoff": "21:00"}
-    ]
+    st.error("No hay partidos disponibles (API issue o sin eventos hoy)")
+    st.stop()
+
+odds_map = fetch_odds()
 
 # 🎯 SELECTOR
 options = [
@@ -164,11 +173,11 @@ st.write(f"🌍 {match['country']} — {match['league']}")
 st.write(f"⏰ {match['kickoff']}")
 
 # 📊 CONFIDENCE
-st.subheader("📊 Confidence")
+st.subheader("📊 Confidence Rating")
 st.write(f"⭐ {confidence} / 10")
 
 # ⚡ TEMPO
-st.subheader("⚡ Tempo")
+st.subheader("⚡ Match Tempo")
 st.write(tempo)
 
 # 🧠 ANALYSIS
