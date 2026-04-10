@@ -1,111 +1,137 @@
+import streamlit as st
+import pandas as pd
+from datetime import datetime
+
+st.set_page_config(layout="wide")
+st.title("🔥 GENIE PRO REAL — ELITE")
+
 # =========================================================
-# 🧠 NARRATIVA ELITE + PLAN DE EJECUCIÓN
+# DATA
 # =========================================================
-def narrative_engine(home, away, ph, pa, goals, xg_h, xg_a, strat, value):
+@st.cache_data
+def load_data():
+    url = "https://www.football-data.co.uk/fixtures.csv"
+    df = pd.read_csv(url)
 
-    # ===== CONTEXTO NARRATIVO
-    if ph > 0.60:
-        dominance = f"{home} es claramente superior y debería imponer condiciones desde el inicio."
-    elif pa > 0.55:
-        dominance = f"{away} tiene ventaja estructural y puede controlar el ritmo del partido."
+    df = df.dropna(subset=["HomeTeam", "AwayTeam"])
+    df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
+
+    today = datetime.today()
+    df_future = df[df["Date"] >= today]
+
+    if df_future.empty:
+        df_future = df.sort_values("Date").tail(40)
+
+    df_future["H"] = df_future["B365H"]
+    df_future["D"] = df_future["B365D"]
+    df_future["A"] = df_future["B365A"]
+
+    df_future = df_future.dropna(subset=["H", "D", "A"])
+
+    return df_future
+
+df = load_data()
+
+if df.empty:
+    st.error("No hay datos disponibles")
+    st.stop()
+
+# =========================================================
+# ENGINE BASE
+# =========================================================
+def genie_analysis(home, away, h, d, a):
+
+    imp_h = 1 / h
+    imp_d = 1 / d
+    imp_a = 1 / a
+    overround = imp_h + imp_d + imp_a
+
+    ph = imp_h / overround
+    pa = imp_a / overround
+
+    total_goals = 2.4 + (abs(h - a) * 0.6)
+
+    xg_home = round(total_goals * ph, 2)
+    xg_away = round(total_goals * pa, 2)
+
+    goals_trend = "Alta tendencia a Over 2.5" if total_goals > 2.8 else "Partido abierto moderado"
+
+    scoring = f"{home} tiende a marcar primero" if ph > 0.60 else "Intercambio probable"
+
+    tactics = f"{home} dominará el juego" if h < 1.7 else "Partido equilibrado"
+
+    strategy = "LAY THE DIP" if total_goals > 2.6 else "OVER / BTTS"
+
+    confidence = round((1 - (overround - 1)) * 10, 2)
+
+    return ph, pa, total_goals, xg_home, xg_away, goals_trend, scoring, tactics, strategy, confidence
+
+
+# =========================================================
+# NARRATIVA
+# =========================================================
+def narrative_engine(home, away, ph, pa, goals, strat):
+
+    dominance = f"{home} domina el escenario" if ph > 0.6 else "Partido equilibrado"
+
+    tempo = "Ritmo alto" if goals > 2.7 else "Ritmo medio"
+
+    if strat == "LAY THE DIP":
+        execution = """
+✔ Esperar 10-15 min  
+✔ Entrar Lay Under  
+✔ Salir tras gol  
+"""
     else:
-        dominance = "Partido equilibrado con potencial de intercambio constante."
-
-    if goals > 2.8:
-        tempo = "Se proyecta un partido de ritmo alto con múltiples situaciones de gol."
-    elif goals > 2.4:
-        tempo = "Ritmo medio con momentos de aceleración ofensiva."
-    else:
-        tempo = "Partido más táctico con menor volumen de ocasiones."
-
-    # ===== LÓGICA DE MERCADO
-    market_logic = f"""
-El mercado está alineado con una probabilidad implícita donde:
-- {home}: {round(ph*100,1)}%
-- {away}: {round(pa*100,1)}%
-
-Esto genera una estructura donde los movimientos de cuota estarán altamente influenciados por:
-✔ Gol temprano  
-✔ Dominio territorial inicial  
-✔ Presión ofensiva sostenida  
+        execution = """
+✔ Esperar validación  
+✔ Entrar Over  
+✔ Salir tras goles  
 """
 
-    # ===== EJECUCIÓN SEGÚN ESTRATEGIA
-    if "Lay The Dip" in strat:
-        execution = f"""
-📌 PLAN OPERATIVO — LAY THE DIP
+    return dominance, tempo, execution
 
-1. Esperar fase inicial (min 8–15) SIN gol.
-2. Detectar caída de cuota en Under 2.5 (market complacency).
-3. Ejecutar LAY cuando el mercado subestima el riesgo real de gol.
 
-🎯 CLAVE:
-El edge no está en el gol, sino en el DESAJUSTE de precio.
+# =========================================================
+# SELECTOR
+# =========================================================
+matches = df.apply(lambda r: f"{r.HomeTeam} vs {r.AwayTeam} | {r.Div}", axis=1)
 
-📈 GESTIÓN:
-- Salida inmediata tras primer gol
-- Si el gol no llega: cerrar en min 55–65
+selected = st.selectbox("Selecciona partido", matches)
 
-⚠ Riesgo:
-Partido muerto / ritmo falso → salida rápida.
-"""
+row = df.iloc[list(matches).index(selected)]
 
-    elif "Momentum" in strat:
-        execution = f"""
-📌 PLAN OPERATIVO — MOMENTUM TRADE
+home, away = row.HomeTeam, row.AwayTeam
 
-1. Esperar 10–15 min para validar dominio.
-2. Confirmar presión (posesión + territorio).
-3. BACK al favorito antes del gol.
+# =========================================================
+# ANALISIS
+# =========================================================
+ph, pa, goals, xg_h, xg_a, goals_trend, scoring, tactics, strategy, confidence = genie_analysis(
+    home, away, row.H, row.D, row.A
+)
 
-🎯 CLAVE:
-Entrar antes del movimiento fuerte de cuota.
+dominance, tempo, execution = narrative_engine(home, away, ph, pa, goals, strategy)
 
-📈 GESTIÓN:
-- Salir tras gol (ideal)
-- Si no domina → NO entrar
+# =========================================================
+# DISPLAY
+# =========================================================
+st.header(f"{home} vs {away}")
 
-⚠ Riesgo:
-Dominio falso → evitar entrada.
-"""
+st.subheader("📊 xG")
+st.write(f"{xg_h} vs {xg_a}")
 
-    elif "Gambit" in strat:
-        execution = f"""
-📌 PLAN OPERATIVO — GENIE GAMBIT
+st.subheader("⚽ Goal Trend")
+st.write(goals_trend)
 
-1. Dividir stake:
-   - 50% favorito
-   - 50% Over 2.5
-2. Buscar escenario de gol + control del favorito.
+st.subheader("🎯 Estrategia")
+st.write(strategy)
 
-🎯 CLAVE:
-Cobertura doble → dirección + goles.
+st.subheader("🧠 Lectura")
+st.write(dominance)
+st.write(tempo)
 
-📈 GESTIÓN:
-- Green tras 1-0 o 2-0
-- Ajuste si partido se abre
+st.subheader("📈 Ejecución")
+st.write(execution)
 
-⚠ Riesgo:
-Gol del underdog temprano.
-"""
-
-    else:
-        execution = f"""
-📌 PLAN OPERATIVO — GOALS FLOW
-
-1. Esperar validación de ritmo (min 10–20)
-2. Detectar intercambio ofensivo
-3. Entrar en Over / BTTS
-
-🎯 CLAVE:
-Flujo de partido, no favorito.
-
-📈 GESTIÓN:
-- Salida tras 1–2 goles
-- Reentrada posible si sigue presión
-
-⚠ Riesgo:
-Partido trabado / sin profundidad.
-"""
-
-    return dominance, tempo, market_logic, execution
+st.subheader("⭐ Confidence")
+st.write(confidence)
