@@ -381,25 +381,35 @@ Buscar ROI del 30% tras gol
 Si estás en rojo tras primer gol, mantener posición esperando segundo gol
 """
         }
-  # =========================================================
-# 🔥 BLOQUE PRO — FIREBALL
-# =========================================================
-if "FIREBALL" in final_strategy["name"].upper():
+    # =========================================================
+    # 🎯 LAY THE DIP (VERSIÓN PRO)
+    # =========================================================
+    elif goals >= 2.8 and edge <= 0.12 and ph < 0.60 and pa < 0.60:
 
-    st.markdown("## 🔥 FIREBALL — PLAN PROFESIONAL")
+        return {
+            "name": "LAY THE DIP",
+            "criteria": "Partido abierto + equilibrio + alta probabilidad de gol temprano",
+            "description": "Aprovecha la caída de cuota del Under 2.5 en los primeros minutos sin gol para capturar valor antes del primer gol.",
+            "entry": "Min 10 (50%) + Min 25 (50%)",
+            "execution": """
+1. Esperar 10 minutos sin gol  
+2. Hacer Lay al Under 2.5 con 50% del stake  
+3. Si sigue 0-0, añadir el otro 50% en minuto 25  
 
-    st.markdown("""
-**📌 Strategy Summary:**We will exploit early market odd rise and the high probability of goals to back Over 2.5 goals, profiting from a price collapse immediately after a goal is scored.
-**📊 Market to Trade:** Over 2.5 Goals  
-**🎯 Strategy Style:**Back to Lay  
-**⏱ Market Entry Timing:**50% stake at minute 10 and Remaining 50% at minute 25 if no goal  
-**🎯 Profit Target:**Aim for ~30% ROI after first goal If still red → hold for second goal  
-**🏦 Bankroll Management:**Use 3% of bankroll  
+🎯 Objetivo:
+Capturar subida de cuota tras 1-2 goles  
 
-**⚠️ Execution Insight (CLAVE)**  
-This strategy depends on early attacking intent.  
-You are trading volatility and timing, not just probability.
-""")
+📈 Salida:
+- Cerrar tras primer gol si cashout es negativo  
+- Mantener hasta 2 goles para maximizar beneficio  
+
+⏱ Salida máxima:
+Minuto 65  
+
+⚠ Riesgo:
+Partido sin ritmo ofensivo real
+"""
+        }
     # =========================================================
     # ⚡ MOMENTUM (FAVORITO CLARO PERO NO GOLEADA ESPERADA)
     # =========================================================
@@ -700,35 +710,28 @@ No estás apostando resultados, estás explotando movimientos de mercado.
 El edge viene del timing del gol y la reacción del precio.
 """)
 
-    # =========================================================
-    # 🎯 LAY THE DIP (VERSIÓN PRO)
-    # =========================================================
-    elif goals >= 2.8 and edge <= 0.12 and ph < 0.60 and pa < 0.60:
+# =========================================================
+# 🎯 BLOQUE PRO — LAY THE DIP
+# =========================================================
+if "LAY THE DIP" in final_strategy["name"].upper():
 
-        return {
-            "name": "LAY THE DIP",
-            "criteria": "Partido abierto + equilibrio + alta probabilidad de gol temprano",
-            "description": "Aprovecha la caída de cuota del Under 2.5 en los primeros minutos sin gol para capturar valor antes del primer gol.",
-            "entry": "Min 10 (50%) + Min 25 (50%)",
-            "execution": """
-1. Esperar 10 minutos sin gol  
-2. Hacer Lay al Under 2.5 con 50% del stake  
-3. Si sigue 0-0, añadir el otro 50% en minuto 25  
+    st.markdown("## 🎯 LAY THE DIP — PLAN PROFESIONAL")
 
-🎯 Objetivo:
-Capturar subida de cuota tras 1-2 goles  
+    st.markdown("""
+**📌 Strategy Summary:** If the early stages of the match are goalless, the price of Under 2.5 goals will dip, creating a prime moment to lay.  
+With a high likelihood of early goals, there’s solid value capturing these price swings.
+**📊 Market to Trade:** Lay Under 2.5 Goals  
+**🎯 Strategy Style:** Lay to Back  
+**⏱ Market Entry :**  Minute 10 → 50% stake  Minute 25 → remaining 50% if still 0-0  
+**🎯 Goal Target:** Aim to secure profit after 2 goals  
+**🚪 Market Exit:** Exit at minute 65 (max exposure)  
+**📈 Profit Exit Instructions:**- If first goal → close immediately if cashout is negative - If positive → let trade run for full potential  
+**🏦 Bankroll Management:** Use 3% of bankroll  
 
-📈 Salida:
-- Cerrar tras primer gol si cashout es negativo  
-- Mantener hasta 2 goles para maximizar beneficio  
-
-⏱ Salida máxima:
-Minuto 65  
-
-⚠ Riesgo:
-Partido sin ritmo ofensivo real
-"""
-        }
+**⚠️ Execution Insight (CLAVE)**  
+This is a time-decay strategy.  
+You are exploiting price compression in the Under market before goals arrive.
+""")
 # 🔥 NUEVO BLOQUE 1
 st.subheader("🧠 LECTURA PROFESIONAL DEL PARTIDO")
 st.markdown(f"""
