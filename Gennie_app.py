@@ -634,21 +634,12 @@ if "GAMBIT" in final_strategy["name"].upper():
 With this gambit, we will be hedging across both match odds and goal market.  
 Best scenario is two goals for the favorite but you must be prepared to pivot in other scenarios.
 
-**📊 Market to Trade**  
-- Match Odds y Over 2.5 Goals  
-**🎯 Strategy Style**  
-- Back to Lay  
-**💰 Market Entry Staking**  
-- Back 50% of your stake on your favorite (NOT the market’s one) immediately  
-- Back remaining 50% on Over 2.5 Goals once odds reach 2.0  
-**🚪 Profit Exit Strategy**  
-- Secure profits early. If both markets turn green after the first goal → lock in gains  
-**🛠 Recovery Strategy**  
-- If match is 0-0 at Half Time → Lay Under 1.5 Goals  
-- Monitor combined exposure constantly  
-- Adjust risk dynamically after each goal  
-**🏦 Bankroll Management**  
-- Use 3% of total bankroll  
+**📊 Market to Trade:**  Match Odds y Over 2.5 Goals  
+**🎯 Strategy Style:**  Back to Lay  
+**💰 Market Entry Staking:** Back 50% of your stake on your favorite (NOT the market’s one) immediately, Back remaining 50% on Over 2.5 Goals once odds reach 2.0  
+**🚪 Profit Exit Strategy:** Secure profits early. If both markets turn green after the first goal → lock in gains  
+**🛠 Recovery Strategy:** If match is 0-0 at Half Time → Lay Under 1.5 Goals, monitor combined exposure constantly and adjust risk dynamically after each goal  
+**🏦 Bankroll Management:** Use 3% of total bankroll  
 
 ---
 
