@@ -281,7 +281,40 @@ Partido trabado
 
     return context, tempo, execution
 
+# =========================================================
+# 📊 TEAM + H2H TRENDS (AGREGADO)
+# =========================================================
+def generate_trends(home, away, ph, pa, goals):
 
+    trends = []
+
+    # 🔹 Tendencia ofensiva
+    if goals > 2.7:
+        trends.append("Más del 60% de probabilidad implícita de Over 2.5 goles")
+
+    # 🔹 Dominancia
+    if ph > 0.60:
+        trends.append(f"{home} tiene alta probabilidad de dominar el partido")
+    elif pa > 0.60:
+        trends.append(f"{away} llega como equipo dominante")
+
+    # 🔹 Partido abierto
+    if abs(ph - pa) < 0.15:
+        trends.append("Partido equilibrado con alta probabilidad de BTTS")
+
+    # 🔹 Momentum ofensivo
+    if goals > 2.5 and ph > 0.50:
+        trends.append(f"{home} probablemente marcará en fases tempranas")
+
+    # 🔹 Simulación tipo H2H (market-based)
+    if goals > 2.6:
+        trends.append("Históricamente este perfil de partido genera múltiples goles")
+
+    # 🔹 Patrón de mercado
+    if ph > 0.55 and goals > 2.6:
+        trends.append("Perfil típico de favorito + over (escenario de trading ideal)")
+
+    return trends
 # =========================================================
 # 🧠 NUEVO: BLOQUE NARRATIVO PROFESIONAL (AGREGADO)
 # =========================================================
@@ -411,6 +444,10 @@ ph, pa, goals, xg_h, xg_a, goals_trend, scoring, tactics, strategy, market, entr
 label, score = classify_match(ph, pa, goals, row.H)
 
 context, tempo, execution = narrative_engine(home, away, ph, pa, goals, xg_h, xg_a, strategy)
+# =========================================================
+# 📊 GENERAR TENDENCIAS (AGREGADO)
+# =========================================================
+trends = generate_trends(home, away, ph, pa, goals)
 
 summary = professional_summary(home, away, ph, pa, goals, strategy)
 
@@ -427,7 +464,13 @@ st.subheader("📊 Clasificación")
 st.write(f"{label} | Score {score}/9")
 
 st.subheader("🧠 GENIE ANALYSIS")
+# =========================================================
+# 📊 TENDENCIAS DEL PARTIDO
+# =========================================================
+st.subheader("📊 TEAM & H2H TRENDS")
 
+for t in trends:
+    st.write(f"• {t}")
 st.markdown(f"""
 ### 📊 xG
 - {xg_h} vs {xg_a}
