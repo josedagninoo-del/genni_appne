@@ -343,11 +343,10 @@ Aplicar **{strategy}** siguiendo confirmación del desarrollo real del partido.
 # =========================================================
 def strategy_engine(home, away, ph, pa, goals, xg_h, xg_a):
 
-        # =========================================================
-    # 🧠 GENIE GAMBIT 2.0 (AGREGADO — PRIORIDAD ALTA)
+    # =========================================================
+    # 🧠 GENIE GAMBIT 2.0 (PRIORIDAD ALTA)
     # =========================================================
     if ph > 0.58 and goals > 2.6:
-
         return {
             "name": "GENIE GAMBIT 2.0",
             "criteria": "Favorito claro + partido abierto + edge en doble mercado",
@@ -368,90 +367,54 @@ Cerrar cuando ambos mercados estén en verde
 0-0 prolongado o gol del underdog
 """
         }
-    # =============================
+
+    # =========================================================
     # 🎯 LAY THE DIP
-    # =============================
-    if goals > 2.7 and abs(ph - pa) < 0.20:
+    # =========================================================
+    elif goals > 2.7 and abs(ph - pa) < 0.20:
         return {
             "name": "LAY THE DIP",
-            "criteria": "Partido abierto + sin dominador claro + expectativa alta de gol",
-            "description": "El mercado bajará la cuota del Under si no hay gol temprano, generando valor para entrar en contra.",
-            "entry": "Min 10-15 si el partido sigue 0-0",
-            "execution": """
-1. Esperar 10-15 minutos sin gol  
-2. Confirmar ritmo ofensivo (ataques, tiros)  
-3. Hacer LAY al Under 2.5  
-
-🎯 Objetivo:
-Capturar subida de cuota tras gol  
-
-📈 Salida:
-Cerrar en el primer gol  
-
-⚠ Riesgo:
-Partido sin ritmo real
-"""
+            "criteria": "Partido abierto + sin dominador claro",
+            "description": "El mercado bajará el Under sin gol temprano.",
+            "entry": "Min 10-15",
+            "execution": "Lay Under 2.5 y cerrar tras gol"
         }
 
-    # =============================
-    # ⚡ MOMENTUM (BACK FAVORITO)
-    # =============================
-    if ph > 0.60:
+    # =========================================================
+    # ⚡ MOMENTUM
+    # =========================================================
+    elif ph > 0.60:
         return {
             "name": "MOMENTUM BACK",
-            "criteria": "Favorito claro con alta probabilidad de dominar",
-            "description": "Aprovechar el dominio esperado del favorito antes de que el mercado reaccione al gol.",
-            "entry": "Min 5-15 tras confirmar dominio",
-            "execution": """
-1. Confirmar dominio inicial (posesión + presión)  
-2. Entrar BACK al favorito antes del gol  
-
-🎯 Objetivo:
-Capturar caída de cuota tras gol  
-
-📈 Salida:
-Cerrar tras gol del favorito  
-
-⚠ Riesgo:
-Dominio falso o partido lento
-"""
+            "criteria": "Favorito dominante",
+            "description": "Entrar antes del gol del favorito.",
+            "entry": "Min 5-15",
+            "execution": "Back favorito y salir tras gol"
         }
 
-    # =============================
-    # 🔥 OVER / BTTS FLOW
-    # =============================
-    if goals > 2.5:
+    # =========================================================
+    # 🔥 GOALS FLOW
+    # =========================================================
+    elif goals > 2.5:
         return {
             "name": "GOALS FLOW",
-            "criteria": "Partido con tendencia ofensiva sostenida",
-            "description": "Ambos equipos tienen capacidad de generar peligro, ideal para explotar el flujo de goles.",
-            "entry": "Min 15-25 con ritmo confirmado",
-            "execution": """
-1. Esperar lectura inicial (15-25 min)  
-2. Confirmar tiros + ocasiones  
-
-🎯 Objetivo:
-Entrar en Over 1.5 / BTTS  
-
-📈 Salida:
-Cerrar tras 1-2 goles  
-
-⚠ Riesgo:
-Ritmo falso / dominio sin profundidad
-"""
+            "criteria": "Partido ofensivo",
+            "description": "Aprovechar flujo de goles",
+            "entry": "Min 15-25",
+            "execution": "Over / BTTS"
         }
 
-    # =============================
-    # 🧊 NO TRADE
-    # =============================
-    return {
-        "name": "NO TRADE",
-        "criteria": "Sin ventaja clara en mercado",
-        "description": "El partido no ofrece condiciones óptimas de trading.",
-        "entry": "No entrar",
-        "execution": "Esperar otro partido con mejor estructura"
-    }
-
+    # =========================================================
+    # 🧊 DEFAULT (CRÍTICO)
+    # =========================================================
+    else:
+        return {
+            "name": "NO TRADE",
+            "criteria": "Sin edge claro",
+            "description": "No operar este partido",
+            "entry": "-",
+            "execution": "Esperar mejores condiciones"
+        }
 # =========================================================
 # 🧠 CLASIFICACIÓN (BASE)
 # =========================================================
