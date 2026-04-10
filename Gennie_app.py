@@ -357,59 +357,18 @@ def strategy_engine(home, away, ph, pa, goals, xg_h, xg_a):
             "execution": "Back favorito + Back Over 2.5"
         }
 
-        # =========================================================
-    # 🔥 FIREBALL (GOLES TEMPRANOS / OVER EXPLOSIVO)
     # =========================================================
-    elif goals >= 2.8 and 0.52 <= ph <= 0.60:
-
-        return {
-            "name": "FIREBALL",
-            "criteria": "Partido abierto + sin dominador fuerte + alta probabilidad de gol temprano",
-            "description": "Estrategia diseñada para explotar equipos con tendencia a marcar rápido y provocar colapso de cuota en Over 2.5.",
-            "entry": "Min 10 (50%) + Min 25 (50% si no hay gol)",
-            "execution": """
-1. Entrar al Over 2.5 con 50% del stake en minuto 10  
-2. Si no hay gol, añadir el 50% restante en minuto 25  
-
-🎯 Objetivo:
-Aprovechar caída de cuota tras gol temprano  
-
-📈 Salida:
-Buscar ROI del 30% tras gol  
-
-⚠ Gestión:
-Si estás en rojo tras primer gol, mantener posición esperando segundo gol
-"""
-        }
-    # =========================================================
-    # 🎯 LAY THE DIP (VERSIÓN PRO)
+    # 🎯 LAY THE DIP (PARTIDO ABIERTO SIN FAVORITO CLARO)
     # =========================================================
     elif goals >= 2.8 and edge <= 0.12 and ph < 0.60 and pa < 0.60:
-
         return {
             "name": "LAY THE DIP",
-            "criteria": "Partido abierto + equilibrio + alta probabilidad de gol temprano",
-            "description": "Aprovecha la caída de cuota del Under 2.5 en los primeros minutos sin gol para capturar valor antes del primer gol.",
-            "entry": "Min 10 (50%) + Min 25 (50%)",
-            "execution": """
-1. Esperar 10 minutos sin gol  
-2. Hacer Lay al Under 2.5 con 50% del stake  
-3. Si sigue 0-0, añadir el otro 50% en minuto 25  
-
-🎯 Objetivo:
-Capturar subida de cuota tras 1-2 goles  
-
-📈 Salida:
-- Cerrar tras primer gol si cashout es negativo  
-- Mantener hasta 2 goles para maximizar beneficio  
-
-⏱ Salida máxima:
-Minuto 65  
-
-⚠ Riesgo:
-Partido sin ritmo ofensivo real
-"""
+            "criteria": "Partido abierto y equilibrado",
+            "description": "Mercado sobreajusta Under",
+            "entry": "Min 10-15",
+            "execution": "Lay Under 2.5"
         }
+
     # =========================================================
     # ⚡ MOMENTUM (FAVORITO CLARO PERO NO GOLEADA ESPERADA)
     # =========================================================
@@ -659,7 +618,7 @@ st.markdown(f"""
 {final_strategy['entry']}
 
 ---
-###  Plan de ejecución
+### 📌 Plan de ejecución
 {final_strategy['execution']}
 """)
 # =========================================================
@@ -668,10 +627,11 @@ st.markdown(f"""
 
 if "GAMBIT" in final_strategy["name"].upper():
 
-     st.markdown("## 🧠 GENIE GAMBIT 2.0 — PLAN PROFESIONAL")
+    st.markdown("## 🧠 GENIE GAMBIT 2.0 — PLAN PROFESIONAL")
 
-     st.markdown("""
- ** Strategy Summary:** With this gambit, we will be hedging across both match odds and goal market.  
+    st.markdown("""
+**📌 Strategy Summary**  
+With this gambit, we will be hedging across both match odds and goal market.  
 Best scenario is two goals for the favorite but you must be prepared to pivot in other scenarios.
 
 **📊 Market to Trade:**  Match Odds y Over 2.5 Goals  
@@ -681,57 +641,13 @@ Best scenario is two goals for the favorite but you must be prepared to pivot in
 **🛠 Recovery Strategy:** If match is 0-0 at Half Time → Lay Under 1.5 Goals, monitor combined exposure constantly and adjust risk dynamically after each goal  
 **🏦 Bankroll Management:** Use 3% of total bankroll  
 
-# =========================================================
-# 🔥 BLOQUE PRO — FIREBALL
-# =========================================================
-if "FIREBALL" in final_strategy["name"].upper():
-
-    st.markdown("## 🔥 FIREBALL — PLAN PROFESIONAL")
-
-    st.markdown("""
-** Strategy Summary:**We will exploit early market odd rise and the high probability of goals to back Over 2.5 goals, profiting from a price collapse immediately after a goal is scored.
-** Market to Trade:** Over 2.5 Goals  
-** Strategy Style:**Back to Lay  
-** Market Entry Timing:**50% stake at minute 10 Remaining 50% at minute 25 if no goal  
-** Profit Target:**Aim for ~30% ROI after first goal, If still red hold for second goal  
-** Bankroll Management:** Use 3% of bankroll  
-
 ---
 
-** Execution Insight (CLAVE)**  
-This strategy depends on early attacking intent.  
-You are trading volatility and timing, not just probability.
-""")
----
-
-** Execution Insight (CLAVE)**  
+**⚠️ Execution Insight (CLAVE)**  
 No estás apostando resultados, estás explotando movimientos de mercado.  
 El edge viene del timing del gol y la reacción del precio.
 """)
-
-# =========================================================
-#  BLOQUE PRO — LAY THE DIP
-# =========================================================
-if "LAY THE DIP" in final_strategy["name"].upper():
-
-    st.markdown("## 🎯 LAY THE DIP — PLAN PROFESIONAL")
-
-    st.markdown("""
-** Strategy Summary:** If the early stages of the match are goalless, the price of Under 2.5 goals will dip, creating a prime moment to lay.  
-With a high likelihood of early goals, there’s solid value capturing these price swings.
-** Market to Trade:** Lay Under 2.5 Goals  
-** Strategy Style:** Lay to Back  
-** Market Entry :**  Minute 10 → 50% stake  Minute 25 → remaining 50% if still 0-0  
-** Goal Target:** Aim to secure profit after 2 goals  
-** Market Exit:** Exit at minute 65 (max exposure)  
-** Profit Exit Instructions:**- If first goal → close immediately if cashout is negative - If positive → let trade run for full potential  
-** Bankroll Management:** Use 3% of bankroll  
-
-** Execution Insight (CLAVE)**  
-This is a time-decay strategy.  
-You are exploiting price compression in the Under market before goals arrive.
-""")
-#  NUEVO BLOQUE 1
+# 🔥 NUEVO BLOQUE 1
 st.subheader("🧠 LECTURA PROFESIONAL DEL PARTIDO")
 st.markdown(f"""
 ### Contexto
@@ -741,7 +657,7 @@ st.markdown(f"""
 {tempo}
 """)
 
-#  NUEVO BLOQUE 3
+# 🔥 NUEVO BLOQUE 3
 st.subheader("🧠 RESUMEN PROFESIONAL AVANZADO")
 st.markdown(summary)
 
