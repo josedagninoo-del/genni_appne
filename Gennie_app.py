@@ -1,231 +1,274 @@
 import streamlit as st
 import pandas as pd
+import requests
 from datetime import datetime
 
 st.set_page_config(layout="wide")
 st.title("🔥 GENIE PRO REAL — ELITE")
 
 # =========================================================
-# 📥 DATA
+# 🔑 CONFIG API (PON TU API KEY)
 # =========================================================
-@st.cache_data
-def load_data():
-    url = "https://www.football-data.co.uk/fixtures.csv"
-    df = pd.read_csv(url)
+API_KEY = st.secrets.get("API_KEY", "")
 
-    df = df.dropna(subset=["HomeTeam", "AwayTeam"])
-    df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
-
-    today = datetime.today()
-    df_future = df[df["Date"] >= today]
-
-    if df_future.empty:
-        df_future = df.sort_values("Date").tail(40)
-
-    df_future["H"] = df_future["B365H"]
-    df_future["D"] = df_future["B365D"]
-    df_future["A"] = df_future["B365A"]
-
-    df_future = df_future.dropna(subset=["H", "D", "A"])
-
-    return df_future
-
-
-df = load_data()
+HEADERS = {
+    "X-RapidAPI-Key": API_KEY,
+    "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
+}
 
 # =========================================================
-# 🧠 ENGINE GENIE
+# 📥 FIXTURES API (PRINCIPAL)
 # =========================================================
-def genie_analysis(home, away, h, d, a):
+def get_api_matches():
+    try:
+        url = "https://api-football-v1.p.rapidapi.com/v3/fixtures"
+        params = {"date": datetime.today().strftime("%Y-%m-%d")}
 
-    imp_h = 1 / h
-    imp_d = 1 / d
-    imp_a = 1 / a
-    overround = imp_h + imp_d + imp_a
+        res = requests.get(url, headers=HEADERS, params=params, timeout=10)
 
-    ph = imp_h / overround
-    pd_ = imp_d / overround
-    pa = imp_a / overround
+        if res.status_code != 200:
+            return []
 
-    # ===== xG ESTIMADO (clave)
-    total_goals = 2.4 + (abs(h - a) * 0.6)
+        data = res.json()
+        matches = []
+
+        for m in data.get("response", []):
+            matches.append({
+                "home": m["teams"]["home"]["name"],
+                "away": m["teams"]["away"]["name"],
+                "league": m["league"]["name"],
+                "date": m["fixture"]["date"],
+                "odds_h": None,
+                "odds_d": None,
+                "odds_a": None
+            })
+
+        return matches
+
+    except:
+        return []
+
+
+# =========================================================
+# 📥 CSV FALLBACK
+# =========================================================
+def get_csv_matches():
+    try:
+        df = pd.read_csv("https://www.football-data.co.uk/fixtures.csv")
+
+        df = df.dropna(subset=["HomeTeam", "AwayTeam"])
+        df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
+
+        today = datetime.today()
+        df = df[df["Date"] >= today]
+
+        matches = []
+
+        for _, r in df.iterrows():
+            matches.append({
+                "home": r["HomeTeam"],
+                "away": r["AwayTeam"],
+                "league": r["Div"],
+                "date": str(r["Date"]),
+                "odds_h": r.get("B365H"),
+                "odds_d": r.get("B365D"),
+                "odds_a": r.get("B365A")
+            })
+
+        return matches
+
+    except:
+        return []
+
+
+# =========================================================
+# 🔄 DATA SOURCE LOGIC (BLINDADO)
+# =========================================================
+matches = get_api_matches()
+
+if not matches:
+    st.warning("⚠️ API sin datos → usando CSV fallback")
+    matches = get_csv_matches()
+
+if not matches:
+    st.error("❌ No hay datos disponibles (ni API ni CSV)")
+    st.stop()
+
+# =========================================================
+# 🧠 GENIE ENGINE (TU BASE ORIGINAL + MEJORADO)
+# =========================================================
+def genie_analysis(home, away, h=None, d=None, a=None):
+
+    if h and d and a:
+        imp_h = 1 / h
+        imp_d = 1 / d
+        imp_a = 1 / a
+        overround = imp_h + imp_d + imp_a
+
+        ph = imp_h / overround
+        pa = imp_a / overround
+    else:
+        ph = 0.45
+        pa = 0.35
+
+    total_goals = 2.4 + abs(ph - pa)
+
     xg_home = round(total_goals * ph, 2)
     xg_away = round(total_goals * pa, 2)
 
-    # ===== GOAL TRENDS
+    # GOALS
     if total_goals > 2.8:
-        goals_trend = "Alta tendencia a Over 2.5"
+        goals_trend = "Alta probabilidad de Over 2.5"
     elif total_goals > 2.4:
         goals_trend = "Partido abierto moderado"
     else:
-        goals_trend = "Tendencia Under / controlado"
+        goals_trend = "Tendencia Under"
 
-    # ===== SCORING PATTERNS
-    if ph > 0.60:
-        scoring = f"{home} tiende a marcar primero y dominar fases iniciales"
+    # FORM
+    if ph > 0.55:
+        form = f"{home} llega como favorito sólido"
     elif pa > 0.45:
-        scoring = f"{away} peligroso en transiciones y gol temprano"
+        form = f"{away} competitivo"
     else:
-        scoring = "Ambos equipos con probabilidad de intercambio"
+        form = "Equipos equilibrados"
 
-    # ===== TEAM TACTICS (lectura mercado)
-    if h < 1.70:
-        tactics = f"{home} dominará posesión y presión alta, {away} replegado + contra"
-    elif abs(h - a) < 0.3:
-        tactics = "Partido táctico equilibrado con presión media-alta de ambos"
+    # SCORING
+    if ph > 0.6:
+        scoring = f"{home} probable primer gol"
     else:
-        tactics = "Dominio ligero + transiciones rápidas"
+        scoring = "Ambos con opciones"
 
-    # ===== RECENT FORM (proxy inteligente)
-    if h < 1.80:
-        form = f"{home} llega en mejor forma estructural según mercado"
-    elif a < 2.20:
-        form = f"{away} competitivo y peligroso"
+    # TACTICS
+    if ph > 0.55:
+        tactics = f"{home} dominará, {away} contraataque"
     else:
-        form = "Forma inconsistente en ambos lados"
+        tactics = "Partido táctico equilibrado"
 
     # =========================================================
-    # 🎯 ESTRATEGIA GENIE REAL
+    # 🎯 ESTRATEGIA REAL GENIE
     # =========================================================
     if total_goals > 2.6:
 
         strategy = "LAY THE DIP"
-        market = "Under 2.5 Goals"
-        entry = "Minuto 10-15 si no hay gol"
-        exit = "Tras primer gol o minuto 65"
-        style = "Lay → Back"
+        market = "Under 2.5"
+        entry = "Min 10-15 si 0-0"
+        exit = "Tras primer gol"
+        rationale = "Alta expectativa de gol genera caída de cuota"
 
-        rationale = "Alta expectativa de gol genera caída artificial en Under"
+    elif ph > 0.6:
 
-    elif ph > 0.58:
-
-        strategy = "FAVORITO PRESIÓN"
+        strategy = "BACK FAVORITO"
         market = "Match Odds"
-        entry = "Minuto 5-15"
-        exit = "Tras gol del favorito"
-        style = "Back → Lay"
-
-        rationale = "Dominio esperado del favorito con presión constante"
+        entry = "Min 5-15"
+        exit = "Tras gol"
+        rationale = "Dominio estructural del favorito"
 
     else:
 
-        strategy = "MOMENTUM / OVER"
-        market = "Over 2.5 / BTTS"
-        entry = "Lectura en vivo (15-25)"
+        strategy = "OVER / BTTS"
+        market = "Over 2.5"
+        entry = "Min 15-25"
         exit = "Tras 1-2 goles"
-        style = "Back"
-
-        rationale = "Partido abierto con intercambio de ocasiones"
-
-    confidence = round((1 - (overround - 1)) * 10, 2)
+        rationale = "Partido abierto"
 
     return {
         "xg_home": xg_home,
         "xg_away": xg_away,
-        "goals_trend": goals_trend,
+        "goals": goals_trend,
+        "form": form,
         "scoring": scoring,
         "tactics": tactics,
-        "form": form,
         "strategy": strategy,
         "market": market,
         "entry": entry,
         "exit": exit,
-        "style": style,
-        "rationale": rationale,
-        "confidence": confidence
+        "rationale": rationale
     }
 
 
 # =========================================================
 # 🎯 SELECTOR
 # =========================================================
-matches = [
-    f"{r.HomeTeam} vs {r.AwayTeam} | {r.Div} | {r.Date.strftime('%d/%m/%Y')}"
-    for _, r in df.iterrows()
+options = [
+    f"{m['home']} vs {m['away']} | {m['league']} | {m['date'][:16]}"
+    for m in matches
 ]
 
-selected = st.selectbox("Selecciona partido", matches)
-row = df.iloc[matches.index(selected)]
+selected = st.selectbox("Selecciona partido", options)
+match = matches[options.index(selected)]
 
-home = row.HomeTeam
-away = row.AwayTeam
-
-analysis = genie_analysis(home, away, row.H, row.D, row.A)
-
-# =========================================================
-# 📊 HEADER
-# =========================================================
-st.header(f"{home} vs {away}")
-st.write(f"🌍 {row.Div}")
-st.write(f"📅 {row.Date.strftime('%d/%m/%Y')}")
-
-st.subheader("💰 Odds")
-st.write(f"{row.H} | {row.D} | {row.A}")
+analysis = genie_analysis(
+    match["home"],
+    match["away"],
+    match["odds_h"],
+    match["odds_d"],
+    match["odds_a"]
+)
 
 # =========================================================
-# 🧠 GENIE ANALYSIS
+# 📊 DISPLAY
+# =========================================================
+st.header(f"{match['home']} vs {match['away']}")
+st.write(f"🌍 {match['league']}")
+st.write(f"📅 {match['date']}")
+
+if match["odds_h"]:
+    st.write(f"💰 Odds: {match['odds_h']} | {match['odds_d']} | {match['odds_a']}")
+
+# =========================================================
+# 🧠 ANALYSIS
 # =========================================================
 st.subheader("🧠 GENIE ANALYSIS")
 
 st.markdown(f"""
-### 📊 xG Analysis
-- {home}: **{analysis['xg_home']} xG**
-- {away}: **{analysis['xg_away']} xG**
+### 📊 xG
+- {analysis['xg_home']} vs {analysis['xg_away']}
 
 ### ⚽ Goal Trends
-{analysis['goals_trend']}
+{analysis['goals']}
 
-### 📈 Recent Form
+### 📈 Forma
 {analysis['form']}
 
-### 🎯 Scoring Patterns
+### 🎯 Scoring
 {analysis['scoring']}
 
-### 🧩 Team Tactics
+### 🧩 Táctica
 {analysis['tactics']}
 """)
 
 # =========================================================
-# 🎯 ESTRATEGIA DETALLADA
+# 🎯 TRADING
 # =========================================================
-st.subheader("🎯 ESTRATEGIA DE TRADING")
+st.subheader("🎯 PLAN DE TRADING")
 
 st.markdown(f"""
-### 📌 Strategy: {analysis['strategy']}
+### 🔥 Estrategia: {analysis['strategy']}
 
-**📊 Market:** {analysis['market']}  
-**🎮 Style:** {analysis['style']}  
+**Mercado:** {analysis['market']}  
+**Entrada:** {analysis['entry']}  
+**Salida:** {analysis['exit']}  
 
-**⏱ Entry:** {analysis['entry']}  
-**🏁 Exit:** {analysis['exit']}  
-
-**🧠 Rationale:**  
+**Racional:**  
 {analysis['rationale']}
 """)
 
 # =========================================================
-# 🧠 RESUMEN PROFESIONAL
+# 🧠 RESUMEN
 # =========================================================
 st.subheader("🧠 RESUMEN PROFESIONAL")
 
 st.markdown(f"""
-Este partido entre **{home} y {away}** presenta un escenario donde el mercado anticipa un encuentro **{analysis['goals_trend']}**.
+El partido entre **{match['home']} y {match['away']}** presenta un escenario donde el mercado anticipa un juego **{analysis['goals']}**.
 
-El modelo proyecta un xG de **{analysis['xg_home']} vs {analysis['xg_away']}**, lo que indica que el partido puede desarrollarse con un ritmo definido por **{analysis['tactics']}**.
+El modelo proyecta un xG de **{analysis['xg_home']} vs {analysis['xg_away']}**, indicando cómo se distribuirán las ocasiones.
 
-Desde la perspectiva de trading, el valor no está en predecir el resultado, sino en **cómo reaccionará el mercado ante los eventos clave**.
+👉 Clave del trade:
+- Ritmo inicial del partido  
+- Reacción del mercado  
+- Confirmación del patrón esperado  
 
-👉 La clave estará en:
-- Confirmación temprana del ritmo esperado  
-- Reacción del mercado al primer gol  
-- Identificación de movimientos de cuota lentos  
+🎯 Estrategia sugerida: **{analysis['strategy']}**
 
-🎯 **Estrategia recomendada:** {analysis['strategy']}
-
-Este tipo de partido ofrece oportunidades claras si se ejecuta con disciplina y timing correcto.
-
-👉 No es predicción. Es lectura de mercado.
+Esto no es predicción, es **lectura de mercado para trading**.
 """)
-
-st.subheader("⭐ Confidence")
-st.write(f"{analysis['confidence']} / 10")
