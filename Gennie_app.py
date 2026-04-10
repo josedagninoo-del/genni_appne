@@ -1,39 +1,38 @@
 import streamlit as st
-import pandas as pd
 import requests
+import pandas as pd
 from datetime import datetime
 
 st.set_page_config(layout="wide")
 st.title("🔥 GENIE PRO REAL — ELITE")
 
-# =========================================================
-# 🔑 CONFIG API (PON TU API KEY)
-# =========================================================
+# =========================
+# 🔑 KEYS
+# =========================
 API_KEY = st.secrets.get("API_KEY", "")
+ODDS_KEY = st.secrets.get("ODDS_API_KEY", "")
 
-HEADERS = {
-    "X-RapidAPI-Key": API_KEY,
-    "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
-}
-
-# =========================================================
-# 📥 FIXTURES API (PRINCIPAL)
-# =========================================================
+# =========================
+# 📡 API FOOTBALL
+# =========================
 def get_api_matches():
     try:
         url = "https://api-football-v1.p.rapidapi.com/v3/fixtures"
+        headers = {
+            "X-RapidAPI-Key": API_KEY,
+            "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
+        }
         params = {"date": datetime.today().strftime("%Y-%m-%d")}
 
-        res = requests.get(url, headers=HEADERS, params=params, timeout=10)
+        res = requests.get(url, headers=headers, params=params, timeout=10)
 
         if res.status_code != 200:
             return []
 
         data = res.json()
-        matches = []
 
-        for m in data.get("response", []):
-            matches.append({
+        return [
+            {
                 "home": m["teams"]["home"]["name"],
                 "away": m["teams"]["away"]["name"],
                 "league": m["league"]["name"],
@@ -41,7 +40,50 @@ def get_api_matches():
                 "odds_h": None,
                 "odds_d": None,
                 "odds_a": None
-            })
+            }
+            for m in data.get("response", [])
+        ]
+
+    except:
+        return []
+
+
+# =========================
+# 📡 ODDS API (BACKUP REAL)
+# =========================
+def get_odds_matches():
+    try:
+        url = "https://api.the-odds-api.com/v4/sports/soccer/odds"
+        params = {
+            "apiKey": ODDS_KEY,
+            "regions": "eu",
+            "markets": "h2h"
+        }
+
+        res = requests.get(url, params=params, timeout=10)
+
+        if res.status_code != 200:
+            return []
+
+        data = res.json()
+        matches = []
+
+        for m in data:
+            try:
+                outcomes = m["bookmakers"][0]["markets"][0]["outcomes"]
+                odds = {o["name"]: o["price"] for o in outcomes}
+
+                matches.append({
+                    "home": m["home_team"],
+                    "away": m["away_team"],
+                    "league": m["sport_title"],
+                    "date": m["commence_time"],
+                    "odds_h": odds.get(m["home_team"]),
+                    "odds_d": odds.get("Draw"),
+                    "odds_a": odds.get(m["away_team"])
+                })
+            except:
+                continue
 
         return matches
 
@@ -49,18 +91,17 @@ def get_api_matches():
         return []
 
 
-# =========================================================
-# 📥 CSV FALLBACK
-# =========================================================
+# =========================
+# 📄 CSV FALLBACK (último nivel)
+# =========================
 def get_csv_matches():
     try:
         df = pd.read_csv("https://www.football-data.co.uk/fixtures.csv")
 
-        df = df.dropna(subset=["HomeTeam", "AwayTeam"])
-        df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
+        df["DateTime"] = pd.to_datetime(df["Date"] + " " + df["Time"], errors="coerce")
 
-        today = datetime.today()
-        df = df[df["Date"] >= today]
+        today = datetime.today().date()
+        df = df[df["DateTime"].dt.date == today]
 
         matches = []
 
@@ -69,7 +110,7 @@ def get_csv_matches():
                 "home": r["HomeTeam"],
                 "away": r["AwayTeam"],
                 "league": r["Div"],
-                "date": str(r["Date"]),
+                "date": str(r["DateTime"]),
                 "odds_h": r.get("B365H"),
                 "odds_d": r.get("B365D"),
                 "odds_a": r.get("B365A")
@@ -81,194 +122,115 @@ def get_csv_matches():
         return []
 
 
-# =========================================================
-# 🔄 DATA SOURCE LOGIC (BLINDADO)
-# =========================================================
+# =========================
+# 🔄 PIPELINE BLINDADO
+# =========================
 matches = get_api_matches()
 
-if not matches:
-    st.warning("⚠️ API sin datos → usando CSV fallback")
-    matches = get_csv_matches()
+if matches:
+    st.success("✅ Fuente: API-Football")
+else:
+    matches = get_odds_matches()
+    if matches:
+        st.warning("⚠️ API vacía → usando OddsAPI")
+    else:
+        matches = get_csv_matches()
+        if matches:
+            st.warning("⚠️ APIs vacías → usando CSV fallback")
+        else:
+            st.error("❌ Sin datos en ninguna fuente")
+            st.stop()
 
-if not matches:
-    st.error("❌ No hay datos disponibles (ni API ni CSV)")
-    st.stop()
 
-# =========================================================
-# 🧠 GENIE ENGINE (TU BASE ORIGINAL + MEJORADO)
-# =========================================================
-def genie_analysis(home, away, h=None, d=None, a=None):
+# =========================
+# 🧠 GENIE ENGINE ELITE
+# =========================
+def genie_analysis(m):
+
+    h, d, a = m["odds_h"], m["odds_d"], m["odds_a"]
 
     if h and d and a:
         imp_h = 1 / h
         imp_d = 1 / d
         imp_a = 1 / a
-        overround = imp_h + imp_d + imp_a
+        total = imp_h + imp_d + imp_a
 
-        ph = imp_h / overround
-        pa = imp_a / overround
+        ph = imp_h / total
+        pa = imp_a / total
     else:
-        ph = 0.45
-        pa = 0.35
+        ph, pa = 0.45, 0.35
 
-    total_goals = 2.4 + abs(ph - pa)
+    goal_expectancy = 2.4 + abs(ph - pa)
 
-    xg_home = round(total_goals * ph, 2)
-    xg_away = round(total_goals * pa, 2)
+    xg_home = round(goal_expectancy * ph, 2)
+    xg_away = round(goal_expectancy * pa, 2)
 
-    # GOALS
-    if total_goals > 2.8:
-        goals_trend = "Alta probabilidad de Over 2.5"
-    elif total_goals > 2.4:
-        goals_trend = "Partido abierto moderado"
+    tempo = "High Tempo" if goal_expectancy > 2.6 else "Controlled Tempo"
+
+    # VALUE DETECTOR
+    value = "YES" if (h and ph > (1/h)) else "NO"
+
+    # ESTRATEGIA
+    if goal_expectancy > 2.7:
+        strategy = "LAY THE DIP (Under 2.5)"
+        entry = "Min 10"
+        exit = "Gol temprano o min 60"
     else:
-        goals_trend = "Tendencia Under"
-
-    # FORM
-    if ph > 0.55:
-        form = f"{home} llega como favorito sólido"
-    elif pa > 0.45:
-        form = f"{away} competitivo"
-    else:
-        form = "Equipos equilibrados"
-
-    # SCORING
-    if ph > 0.6:
-        scoring = f"{home} probable primer gol"
-    else:
-        scoring = "Ambos con opciones"
-
-    # TACTICS
-    if ph > 0.55:
-        tactics = f"{home} dominará, {away} contraataque"
-    else:
-        tactics = "Partido táctico equilibrado"
-
-    # =========================================================
-    # 🎯 ESTRATEGIA REAL GENIE
-    # =========================================================
-    if total_goals > 2.6:
-
-        strategy = "LAY THE DIP"
-        market = "Under 2.5"
-        entry = "Min 10-15 si 0-0"
-        exit = "Tras primer gol"
-        rationale = "Alta expectativa de gol genera caída de cuota"
-
-    elif ph > 0.6:
-
-        strategy = "BACK FAVORITO"
-        market = "Match Odds"
-        entry = "Min 5-15"
-        exit = "Tras gol"
-        rationale = "Dominio estructural del favorito"
-
-    else:
-
-        strategy = "OVER / BTTS"
-        market = "Over 2.5"
-        entry = "Min 15-25"
-        exit = "Tras 1-2 goles"
-        rationale = "Partido abierto"
+        strategy = "OVER 1.5 / BTTS"
+        entry = "Min 15"
+        exit = "Gol o min 70"
 
     return {
         "xg_home": xg_home,
         "xg_away": xg_away,
-        "goals": goals_trend,
-        "form": form,
-        "scoring": scoring,
-        "tactics": tactics,
+        "tempo": tempo,
         "strategy": strategy,
-        "market": market,
         "entry": entry,
         "exit": exit,
-        "rationale": rationale
+        "value": value,
+        "confidence": round(6 + abs(ph - pa)*10, 1)
     }
 
 
-# =========================================================
-# 🎯 SELECTOR
-# =========================================================
+# =========================
+# 🎯 UI
+# =========================
 options = [
     f"{m['home']} vs {m['away']} | {m['league']} | {m['date'][:16]}"
     for m in matches
 ]
 
 selected = st.selectbox("Selecciona partido", options)
-match = matches[options.index(selected)]
+m = matches[options.index(selected)]
 
-analysis = genie_analysis(
-    match["home"],
-    match["away"],
-    match["odds_h"],
-    match["odds_d"],
-    match["odds_a"]
-)
+a = genie_analysis(m)
 
-# =========================================================
-# 📊 DISPLAY
-# =========================================================
-st.header(f"{match['home']} vs {match['away']}")
-st.write(f"🌍 {match['league']}")
-st.write(f"📅 {match['date']}")
+# =========================
+# 📊 DISPLAY ELITE
+# =========================
+st.header(f"{m['home']} vs {m['away']}")
+st.write(f"🌍 {m['league']}")
+st.write(f"📅 {m['date']}")
 
-if match["odds_h"]:
-    st.write(f"💰 Odds: {match['odds_h']} | {match['odds_d']} | {match['odds_a']}")
+st.subheader("📊 Genie Key Stats")
+st.write(f"xG: {a['xg_home']} vs {a['xg_away']}")
+st.write(f"Tempo: {a['tempo']}")
+st.write(f"Value Detected: {a['value']}")
 
-# =========================================================
-# 🧠 ANALYSIS
-# =========================================================
-st.subheader("🧠 GENIE ANALYSIS")
+st.subheader("🧠 Tactical Insight")
+st.write("Equipo favorito dominará posesión y ritmo, rival buscará transición rápida.")
+st.write("Alta probabilidad de gol temprano si el tempo es alto.")
 
-st.markdown(f"""
-### 📊 xG
-- {analysis['xg_home']} vs {analysis['xg_away']}
+st.subheader("📈 Goal Trends")
+st.write("Partido proyectado con alta probabilidad de Over 1.5 / Over 2.5")
 
-### ⚽ Goal Trends
-{analysis['goals']}
+st.subheader("⚔️ Trading Strategy")
+st.write(f"Estrategia: {a['strategy']}")
+st.write(f"Entrada: {a['entry']}")
+st.write(f"Salida: {a['exit']}")
 
-### 📈 Forma
-{analysis['form']}
+st.subheader("💰 Bankroll")
+st.write("Stake sugerido: 2–4%")
 
-### 🎯 Scoring
-{analysis['scoring']}
-
-### 🧩 Táctica
-{analysis['tactics']}
-""")
-
-# =========================================================
-# 🎯 TRADING
-# =========================================================
-st.subheader("🎯 PLAN DE TRADING")
-
-st.markdown(f"""
-### 🔥 Estrategia: {analysis['strategy']}
-
-**Mercado:** {analysis['market']}  
-**Entrada:** {analysis['entry']}  
-**Salida:** {analysis['exit']}  
-
-**Racional:**  
-{analysis['rationale']}
-""")
-
-# =========================================================
-# 🧠 RESUMEN
-# =========================================================
-st.subheader("🧠 RESUMEN PROFESIONAL")
-
-st.markdown(f"""
-El partido entre **{match['home']} y {match['away']}** presenta un escenario donde el mercado anticipa un juego **{analysis['goals']}**.
-
-El modelo proyecta un xG de **{analysis['xg_home']} vs {analysis['xg_away']}**, indicando cómo se distribuirán las ocasiones.
-
-👉 Clave del trade:
-- Ritmo inicial del partido  
-- Reacción del mercado  
-- Confirmación del patrón esperado  
-
-🎯 Estrategia sugerida: **{analysis['strategy']}**
-
-Esto no es predicción, es **lectura de mercado para trading**.
-""")
+st.subheader("⭐ Confidence")
+st.write(f"{a['confidence']} / 10")
