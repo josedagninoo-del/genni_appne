@@ -144,38 +144,34 @@ def genie_analysis(home, away, h, d, a):
 
     return ph, pa, total_goals, xg_home, xg_away, goals_trend, scoring, tactics, strategy, market, entry, exit, confidence
 # =========================================================
-# 🤖 ML PREDICCIÓN (AGREGADO)
-# =========================================================
-ml_prediction = ml_goal_prediction(ph, pa, goals)    
-
-# =========================================================
 # 🤖 ML GOAL TIMING MODEL (AGREGADO)
 # =========================================================
 def ml_goal_prediction(ph, pa, goals):
 
     score = 0
 
-    # 🔹 Intensidad del partido
     if goals > 2.8:
         score += 2
     elif goals > 2.5:
         score += 1
 
-    # 🔹 Dominancia
     if ph > 0.60 or pa > 0.60:
         score += 1
 
-    # 🔹 Equilibrio (partidos abiertos)
     if abs(ph - pa) < 0.15:
         score += 1
 
-    # 🔹 Decisión ML
     if score >= 3:
         return "🔥 Alta probabilidad de gol temprano (0-30 min)"
     elif score == 2:
         return "⚠️ Probabilidad media de gol (30-60 min)"
     else:
         return "❄️ Baja probabilidad de gol temprano"
+# =========================================================
+# 🤖 ML PREDICCIÓN (AGREGADO)
+# =========================================================
+ml_prediction = ml_goal_prediction(ph, pa, goals)    
+
 # =========================================================
 # 🧠 NUEVO: NARRATIVA ELITE + EJECUCIÓN (AGREGADO)
 # =========================================================
