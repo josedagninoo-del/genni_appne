@@ -357,6 +357,30 @@ def strategy_engine(home, away, ph, pa, goals, xg_h, xg_a):
             "execution": "Back favorito + Back Over 2.5"
         }
 
+        # =========================================================
+    # 🔥 FIREBALL (GOLES TEMPRANOS / OVER EXPLOSIVO)
+    # =========================================================
+    elif goals >= 2.8 and 0.52 <= ph <= 0.60:
+
+        return {
+            "name": "FIREBALL",
+            "criteria": "Partido abierto + sin dominador fuerte + alta probabilidad de gol temprano",
+            "description": "Estrategia diseñada para explotar equipos con tendencia a marcar rápido y provocar colapso de cuota en Over 2.5.",
+            "entry": "Min 10 (50%) + Min 25 (50% si no hay gol)",
+            "execution": """
+1. Entrar al Over 2.5 con 50% del stake en minuto 10  
+2. Si no hay gol, añadir el 50% restante en minuto 25  
+
+🎯 Objetivo:
+Aprovechar caída de cuota tras gol temprano  
+
+📈 Salida:
+Buscar ROI del 30% tras gol  
+
+⚠ Gestión:
+Si estás en rojo tras primer gol, mantener posición esperando segundo gol
+"""
+        }
     # =========================================================
     # 🎯 LAY THE DIP (PARTIDO ABIERTO SIN FAVORITO CLARO)
     # =========================================================
@@ -641,6 +665,27 @@ Best scenario is two goals for the favorite but you must be prepared to pivot in
 **🛠 Recovery Strategy:** If match is 0-0 at Half Time → Lay Under 1.5 Goals, monitor combined exposure constantly and adjust risk dynamically after each goal  
 **🏦 Bankroll Management:** Use 3% of total bankroll  
 
+# =========================================================
+# 🔥 BLOQUE PRO — FIREBALL
+# =========================================================
+if "FIREBALL" in final_strategy["name"].upper():
+
+    st.markdown("## 🔥 FIREBALL — PLAN PROFESIONAL")
+
+    st.markdown("""
+**📌 Strategy Summary:**We will exploit early market odd rise and the high probability of goals to back Over 2.5 goals, profiting from a price collapse immediately after a goal is scored.
+**📊 Market to Trade:** Over 2.5 Goals  
+**🎯 Strategy Style:**Back to Lay  
+**⏱ Market Entry Timing:**50% stake at minute 10 Remaining 50% at minute 25 if no goal  
+**🎯 Profit Target:**Aim for ~30% ROI after first goal, If still red → hold for second goal  
+**🏦 Bankroll Management:** Use 3% of bankroll  
+
+---
+
+**⚠️ Execution Insight (CLAVE)**  
+This strategy depends on early attacking intent.  
+You are trading volatility and timing, not just probability.
+""")
 ---
 
 **⚠️ Execution Insight (CLAVE)**  
