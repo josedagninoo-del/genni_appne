@@ -143,6 +143,15 @@ def genie_analysis(home, away, h, d, a):
     confidence = round((1 - (overround - 1)) * 10, 2)
 
     return ph, pa, total_goals, xg_home, xg_away, goals_trend, scoring, tactics, strategy, market, entry, exit, confidence
+# =========================================================
+# 🤖 MACHINE LEARNING INSIGHT
+# =========================================================
+st.subheader("🤖 MACHINE LEARNING INSIGHT")
+st.write(ml_prediction)    
+# =========================================================
+# 🤖 ML PREDICCIÓN (AGREGADO)
+# =========================================================
+ml_prediction = ml_goal_prediction(ph, pa, goals)    
 
 # =========================================================
 # 🤖 ML GOAL TIMING MODEL (AGREGADO)
