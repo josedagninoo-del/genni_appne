@@ -548,21 +548,31 @@ strategy_data = strategy_engine(home, away, ph, pa, goals, xg_h, xg_a)
 final_strategy = strategy_data
 
 # Si el motor base sugiere LAY THE DIP pero el modelo pro no coincide
-if "LAY THE DIP" in strategy and strategy_data["name"] != "LAY THE DIP":
+# =========================================================
+# 🔧 FIX CONSISTENCIA (MEJORADO)
+# =========================================================
+if strategy_data is None:
+    final_strategy = {
+        "name": "NO TRADE",
+        "criteria": "Error en estrategia",
+        "description": "No se pudo generar estrategia",
+        "entry": "-",
+        "execution": "Revisar modelo"
+    }
+
+elif "LAY THE DIP" in strategy and strategy_data["name"] == "NO TRADE":
     final_strategy = {
         "name": "LAY THE DIP",
         "criteria": "Alta expectativa de gol temprano",
         "description": "Mercado sobreajusta el Under sin gol temprano",
         "entry": entry,
         "execution": f"""
-Se mantiene estrategia base:
-
 Entrada: {entry}
 Salida: {exit}
-
-⚠ Ejecutar según ritmo real del partido
 """
     }
+else:
+    final_strategy = strategy_data
 
 # =========================================================
 # 📊 GENERAR TENDENCIAS (AGREGADO)
