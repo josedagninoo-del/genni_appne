@@ -338,7 +338,94 @@ Aplicar **{strategy}** siguiendo confirmación del desarrollo real del partido.
 
 👉 No se trata de predecir el resultado, sino de explotar el comportamiento del mercado.
 """
+# =========================================================
+# 🎯 STRATEGY ENGINE PRO (AGREGADO)
+# =========================================================
+def strategy_engine(home, away, ph, pa, goals, xg_h, xg_a):
 
+    # =============================
+    # 🎯 LAY THE DIP
+    # =============================
+    if goals > 2.7 and abs(ph - pa) < 0.20:
+        return {
+            "name": "LAY THE DIP",
+            "criteria": "Partido abierto + sin dominador claro + expectativa alta de gol",
+            "description": "El mercado bajará la cuota del Under si no hay gol temprano, generando valor para entrar en contra.",
+            "entry": "Min 10-15 si el partido sigue 0-0",
+            "execution": """
+1. Esperar 10-15 minutos sin gol  
+2. Confirmar ritmo ofensivo (ataques, tiros)  
+3. Hacer LAY al Under 2.5  
+
+🎯 Objetivo:
+Capturar subida de cuota tras gol  
+
+📈 Salida:
+Cerrar en el primer gol  
+
+⚠ Riesgo:
+Partido sin ritmo real
+"""
+        }
+
+    # =============================
+    # ⚡ MOMENTUM (BACK FAVORITO)
+    # =============================
+    if ph > 0.60:
+        return {
+            "name": "MOMENTUM BACK",
+            "criteria": "Favorito claro con alta probabilidad de dominar",
+            "description": "Aprovechar el dominio esperado del favorito antes de que el mercado reaccione al gol.",
+            "entry": "Min 5-15 tras confirmar dominio",
+            "execution": """
+1. Confirmar dominio inicial (posesión + presión)  
+2. Entrar BACK al favorito antes del gol  
+
+🎯 Objetivo:
+Capturar caída de cuota tras gol  
+
+📈 Salida:
+Cerrar tras gol del favorito  
+
+⚠ Riesgo:
+Dominio falso o partido lento
+"""
+        }
+
+    # =============================
+    # 🔥 OVER / BTTS FLOW
+    # =============================
+    if goals > 2.5:
+        return {
+            "name": "GOALS FLOW",
+            "criteria": "Partido con tendencia ofensiva sostenida",
+            "description": "Ambos equipos tienen capacidad de generar peligro, ideal para explotar el flujo de goles.",
+            "entry": "Min 15-25 con ritmo confirmado",
+            "execution": """
+1. Esperar lectura inicial (15-25 min)  
+2. Confirmar tiros + ocasiones  
+
+🎯 Objetivo:
+Entrar en Over 1.5 / BTTS  
+
+📈 Salida:
+Cerrar tras 1-2 goles  
+
+⚠ Riesgo:
+Ritmo falso / dominio sin profundidad
+"""
+        }
+
+    # =============================
+    # 🧊 NO TRADE
+    # =============================
+    return {
+        "name": "NO TRADE",
+        "criteria": "Sin ventaja clara en mercado",
+        "description": "El partido no ofrece condiciones óptimas de trading.",
+        "entry": "No entrar",
+        "execution": "Esperar otro partido con mejor estructura"
+    }
 
 # =========================================================
 # 🧠 CLASIFICACIÓN (BASE)
@@ -444,6 +531,12 @@ ph, pa, goals, xg_h, xg_a, goals_trend, scoring, tactics, strategy, market, entr
 label, score = classify_match(ph, pa, goals, row.H)
 
 context, tempo, execution = narrative_engine(home, away, ph, pa, goals, xg_h, xg_a, strategy)
+
+# =========================================================
+# 🎯 GENERAR ESTRATEGIA PRO
+# =========================================================
+strategy_data = strategy_engine(home, away, ph, pa, goals, xg_h, xg_a)
+
 # =========================================================
 # 📊 GENERAR TENDENCIAS (AGREGADO)
 # =========================================================
@@ -488,11 +581,20 @@ st.markdown(f"""
 st.subheader("🎯 ESTRATEGIA DE TRADING")
 
 st.markdown(f"""
-**Strategy:** {strategy}  
-**Market:** {market}  
+### 🧠 Estrategia: {strategy_data['name']}
 
-**Entry:** {entry}  
-**Exit:** {exit}  
+📊 **Criterio**
+{strategy_data['criteria']}
+
+🧩 **Descripción**
+{strategy_data['description']}
+
+⏱ **Entrada**
+{strategy_data['entry']}
+
+---
+### 📌 Plan de ejecución
+{strategy_data['execution']}
 """)
 
 # 🔥 NUEVO BLOQUE 1
