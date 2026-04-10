@@ -144,11 +144,6 @@ def genie_analysis(home, away, h, d, a):
 
     return ph, pa, total_goals, xg_home, xg_away, goals_trend, scoring, tactics, strategy, market, entry, exit, confidence
 # =========================================================
-# 🤖 MACHINE LEARNING INSIGHT
-# =========================================================
-st.subheader("🤖 MACHINE LEARNING INSIGHT")
-st.write(ml_prediction)    
-# =========================================================
 # 🤖 ML PREDICCIÓN (AGREGADO)
 # =========================================================
 ml_prediction = ml_goal_prediction(ph, pa, goals)    
