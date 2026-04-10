@@ -342,79 +342,69 @@ Aplicar **{strategy}** siguiendo confirmación del desarrollo real del partido.
 # =========================================================
 def strategy_engine(home, away, ph, pa, goals, xg_h, xg_a):
 
+ def strategy_engine(home, away, ph, pa, goals, xg_h, xg_a):
+
+    edge = abs(ph - pa)
+
     # =========================================================
-    # 🧠 GENIE GAMBIT 2.0 (PRIORIDAD ALTA)
+    # 💣 GENIE GAMBIT 2.0 (FAVORITO + GOLES)
     # =========================================================
-    if ph > 0.58 and goals > 2.6:
+    if ph >= 0.62 and goals >= 2.7:
         return {
             "name": "GENIE GAMBIT 2.0",
-            "criteria": "Favorito claro + partido abierto + edge en doble mercado",
-            "description": "Estrategia combinada que explota la ventaja del favorito junto con la expectativa de goles.",
-            "entry": "Pre-match + Over 2.5 cuando cuota ≥ 2.0",
-            "execution": """
-1. Back 50% del stake al favorito inmediatamente  
-2. Esperar subida de cuota en Over 2.5 a ~2.0  
-3. Back restante 50% en Over 2.5  
-
-🎯 Objetivo:
-Capturar beneficio en ambos mercados tras el primer gol  
-
-📈 Salida:
-Cerrar cuando ambos mercados estén en verde  
-
-⚠ Riesgo:
-0-0 prolongado o gol del underdog
-"""
+            "criteria": "Favorito fuerte + partido abierto",
+            "description": "Explota dominio + goles",
+            "entry": "Pre-match + Over 2.5 en subida",
+            "execution": "Back favorito + Back Over 2.5"
         }
 
     # =========================================================
-    # 🎯 LAY THE DIP
+    # 🎯 LAY THE DIP (PARTIDO ABIERTO SIN FAVORITO CLARO)
     # =========================================================
-    elif goals > 2.7 and abs(ph - pa) < 0.20:
+    elif goals >= 2.8 and edge <= 0.12:
         return {
             "name": "LAY THE DIP",
-            "criteria": "Partido abierto + sin dominador claro",
-            "description": "El mercado bajará el Under sin gol temprano.",
+            "criteria": "Partido abierto y equilibrado",
+            "description": "Mercado sobreajusta Under",
             "entry": "Min 10-15",
-            "execution": "Lay Under 2.5 y cerrar tras gol"
+            "execution": "Lay Under 2.5"
         }
 
     # =========================================================
-    # ⚡ MOMENTUM
+    # ⚡ MOMENTUM (FAVORITO CLARO PERO NO GOLEADA ESPERADA)
     # =========================================================
-    elif ph > 0.60:
+    elif ph >= 0.65 and goals < 2.7:
         return {
             "name": "MOMENTUM BACK",
-            "criteria": "Favorito dominante",
-            "description": "Entrar antes del gol del favorito.",
+            "criteria": "Favorito dominante en partido controlado",
+            "description": "Entrar antes del gol",
             "entry": "Min 5-15",
-            "execution": "Back favorito y salir tras gol"
+            "execution": "Back favorito"
         }
 
     # =========================================================
-    # 🔥 GOALS FLOW
+    # 🔥 GOALS FLOW (SOLO SI NO HAY EDGE CLARO)
     # =========================================================
-    elif goals > 2.5:
+    elif goals >= 2.6 and edge < 0.18:
         return {
             "name": "GOALS FLOW",
-            "criteria": "Partido ofensivo",
-            "description": "Aprovechar flujo de goles",
+            "criteria": "Partido abierto pero sin dominador",
+            "description": "Flujo de goles sin estructura clara",
             "entry": "Min 15-25",
             "execution": "Over / BTTS"
         }
 
     # =========================================================
-    # 🧊 DEFAULT (CRÍTICO)
+    # 🧊 NO TRADE
     # =========================================================
     else:
         return {
             "name": "NO TRADE",
-            "criteria": "Sin edge claro",
-            "description": "No operar este partido",
+            "criteria": "Sin condiciones claras",
+            "description": "No hay edge",
             "entry": "-",
-            "execution": "Esperar mejores condiciones"
-        }
-# =========================================================
+            "execution": "Skip"
+        }# =========================================================
 # 🧠 CLASIFICACIÓN (BASE)
 # =========================================================
 def classify_match(ph, pa, goals, h):
