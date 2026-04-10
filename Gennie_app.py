@@ -348,7 +348,7 @@ def strategy_engine(home, away, ph, pa, goals, xg_h, xg_a):
     # =========================================================
     # 💣 GENIE GAMBIT 2.0 (FAVORITO + GOLES)
     # =========================================================
-    if ph >= 0.62 and goals >= 2.7:
+    if ph >= 0.60 and goals >= 2.7:
         return {
             "name": "GENIE GAMBIT 2.0",
             "criteria": "Favorito fuerte + partido abierto",
@@ -360,7 +360,7 @@ def strategy_engine(home, away, ph, pa, goals, xg_h, xg_a):
     # =========================================================
     # 🎯 LAY THE DIP (PARTIDO ABIERTO SIN FAVORITO CLARO)
     # =========================================================
-    elif goals >= 2.8 and edge <= 0.12:
+    elif goals >= 2.8 and edge <= 0.12 and ph < 0.60 and pa < 0.60:
         return {
             "name": "LAY THE DIP",
             "criteria": "Partido abierto y equilibrado",
