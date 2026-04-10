@@ -30,11 +30,10 @@ def load_data():
 
     return df_future
 
-
 df = load_data()
 
 # =========================================================
-# 🧠 CORE ENGINE (TU BASE)
+# 🧠 ENGINE BASE (NO TOCAR)
 # =========================================================
 def genie_analysis(home, away, h, d, a):
 
@@ -51,21 +50,58 @@ def genie_analysis(home, away, h, d, a):
     xg_home = round(total_goals * ph, 2)
     xg_away = round(total_goals * pa, 2)
 
-    return ph, pa, total_goals, xg_home, xg_away
+    # ===== NARRATIVA ORIGINAL
+    if total_goals > 2.8:
+        goals_trend = "Alta tendencia a Over 2.5"
+    elif total_goals > 2.4:
+        goals_trend = "Partido abierto moderado"
+    else:
+        goals_trend = "Tendencia Under / controlado"
+
+    if ph > 0.60:
+        scoring = f"{home} tiende a marcar primero"
+    elif pa > 0.45:
+        scoring = f"{away} peligroso en transición"
+    else:
+        scoring = "Intercambio probable"
+
+    if h < 1.70:
+        tactics = f"{home} dominará, {away} buscará contra"
+    elif abs(h - a) < 0.3:
+        tactics = "Partido equilibrado"
+    else:
+        tactics = "Dominio ligero + transiciones"
+
+    # ===== ESTRATEGIA ORIGINAL
+    if total_goals > 2.6:
+        strategy = "LAY THE DIP"
+        market = "Under 2.5"
+        entry = "Min 10-15"
+        exit = "Gol o min 60"
+    elif ph > 0.58:
+        strategy = "BACK FAVORITO"
+        market = "Match Odds"
+        entry = "Min 5-15"
+        exit = "Gol favorito"
+    else:
+        strategy = "OVER / BTTS"
+        market = "Goals"
+        entry = "Min 15-25"
+        exit = "Tras goles"
+
+    confidence = round((1 - (overround - 1)) * 10, 2)
+
+    return ph, pa, total_goals, xg_home, xg_away, goals_trend, scoring, tactics, strategy, market, entry, exit, confidence
 
 
 # =========================================================
-# 🧠 NUEVO: MATCH RATING SYSTEM (CLAVE)
+# 🧠 NUEVO: CLASIFICACIÓN (SIN ROMPER BASE)
 # =========================================================
-def classify_match(home, away, h, d, a):
-
-    ph, pa, goals, xg_h, xg_a = genie_analysis(home, away, h, d, a)
+def classify_match(ph, pa, goals, h):
 
     edge = abs(ph - pa)
-
     score = 0
 
-    # ===== 1. CLARIDAD DE MERCADO
     if edge > 0.20:
         score += 3
     elif edge > 0.10:
@@ -73,7 +109,6 @@ def classify_match(home, away, h, d, a):
     else:
         score += 1
 
-    # ===== 2. EXPECTATIVA DE GOLES
     if goals > 2.7:
         score += 3
     elif goals > 2.4:
@@ -81,39 +116,30 @@ def classify_match(home, away, h, d, a):
     else:
         score += 1
 
-    # ===== 3. EQUILIBRIO VS CAOS
     if 1.7 < h < 2.8:
         score += 2
-    elif h < 1.6:
-        score += 1
     else:
         score += 1
 
-    # ===== CLASIFICACIÓN FINAL
     if score >= 7:
-        label = "🟢 ENTRADA"
+        return "🟢 ENTRADA", score
     elif score >= 5:
-        label = "🟡 LECTURA"
+        return "🟡 LECTURA", score
     else:
-        label = "🔴 EVITAR"
-
-    return label, score, goals, xg_h, xg_a
+        return "🔴 EVITAR", score
 
 
 # =========================================================
-# 📊 GENERAR LISTA GLOBAL (TIPO TU ANÁLISIS)
+# 🚨 CONCLUSIÓN OPERATIVA (CLAVE)
 # =========================================================
 st.subheader("🚨 CONCLUSIÓN OPERATIVA")
 
-entradas = []
-lectura = []
-evitar = []
+entradas, lectura, evitar = [], [], []
 
 for _, r in df.iterrows():
 
-    label, score, goals, xg_h, xg_a = classify_match(
-        r.HomeTeam, r.AwayTeam, r.H, r.D, r.A
-    )
+    ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, r.H, r.D, r.A)
+    label, _ = classify_match(ph, pa, goals, r.H)
 
     match = f"{r.HomeTeam} vs {r.AwayTeam}"
 
@@ -124,9 +150,6 @@ for _, r in df.iterrows():
     else:
         evitar.append(match)
 
-# =========================
-# 🎯 DISPLAY TIPO PROFESIONAL
-# =========================
 st.markdown("### 🟢 PARTIDOS PARA ENTRAR")
 for m in entradas[:5]:
     st.write(m)
@@ -141,7 +164,7 @@ for m in evitar[:5]:
 
 
 # =========================================================
-# 🎯 SELECTOR NORMAL
+# 🎯 SELECTOR
 # =========================================================
 matches = [
     f"{r.HomeTeam} vs {r.AwayTeam} | {r.Div} | {r.Date.strftime('%d/%m/%Y')}"
@@ -151,47 +174,67 @@ matches = [
 selected = st.selectbox("Selecciona partido", matches)
 row = df.iloc[matches.index(selected)]
 
-home = row.HomeTeam
-away = row.AwayTeam
+home, away = row.HomeTeam, row.AwayTeam
 
-label, score, goals, xg_h, xg_a = classify_match(
+ph, pa, goals, xg_h, xg_a, goals_trend, scoring, tactics, strategy, market, entry, exit, confidence = genie_analysis(
     home, away, row.H, row.D, row.A
 )
 
+label, score = classify_match(ph, pa, goals, row.H)
+
 # =========================================================
-# 📊 DETALLE
+# 📊 DISPLAY COMPLETO (NARRATIVO)
 # =========================================================
 st.header(f"{home} vs {away}")
 st.write(f"🌍 {row.Div}")
 st.write(f"📅 {row.Date.strftime('%d/%m/%Y')}")
 
-st.subheader("📊 Clasificación del Partido")
-st.write(f"{label} | Score: {score}/9")
+st.subheader("📊 Clasificación")
+st.write(f"{label} | Score {score}/9")
 
-st.subheader("📈 xG")
-st.write(f"{xg_h} vs {xg_a}")
-
-st.subheader("⚡ Expectativa de Partido")
-st.write(f"Goals Expectation: {round(goals,2)}")
-
-# =========================================================
-# 🧠 RESUMEN ESTILO TÚ
-# =========================================================
-st.subheader("🧠 LECTURA DE MERCADO")
+st.subheader("🧠 GENIE ANALYSIS")
 
 st.markdown(f"""
-Este partido entre **{home} y {away}** presenta una estructura de mercado clasificada como **{label}**.
+### 📊 xG
+- {xg_h} vs {xg_a}
 
-El modelo detecta:
-- Diferencial de probabilidad relevante → {round(abs((1/row.H)-(1/row.A)),2)}
-- xG proyectado → {xg_h} vs {xg_a}
-- Expectativa de goles → {round(goals,2)}
+### ⚽ Goal Trends
+{goals_trend}
 
-👉 Interpretación:
-El valor no está en el resultado, sino en cómo reaccionará el mercado.
+### 🎯 Scoring Patterns
+{scoring}
 
-- Si el partido rompe temprano → oportunidad clara de trading
-- Si el mercado se congela → evitar sobreexposición
-
-🎯 Este es un partido tipo: **{label}**
+### 🧩 Team Tactics
+{tactics}
 """)
+
+st.subheader("🎯 ESTRATEGIA DE TRADING")
+
+st.markdown(f"""
+**Strategy:** {strategy}  
+**Market:** {market}  
+
+**Entry:** {entry}  
+**Exit:** {exit}  
+
+👉 Este setup busca explotar el comportamiento del mercado más que el resultado.
+""")
+
+st.subheader("🧠 RESUMEN PROFESIONAL")
+
+st.markdown(f"""
+Este partido está clasificado como **{label}**, lo que indica una estructura clara para trading.
+
+El modelo proyecta:
+- xG: {xg_h} vs {xg_a}
+- Expectativa de goles: {round(goals,2)}
+
+👉 La clave está en la reacción del mercado al primer evento clave (gol o presión inicial).
+
+🎯 Estrategia recomendada: **{strategy}**
+
+Esto no es predicción, es ventaja de mercado.
+""")
+
+st.subheader("⭐ Confidence")
+st.write(f"{confidence} / 10")
