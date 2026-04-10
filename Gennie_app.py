@@ -53,6 +53,48 @@ def load_api_data():
     except:
         return None
 # =========================================================
+# 💰 ODDS REALES API (AGREGADO)
+# =========================================================
+def load_real_odds(fixture_id):
+
+    try:
+        API_KEY = st.secrets.get("API_KEY", "")
+
+        url = "https://api-football-v1.p.rapidapi.com/v3/odds"
+        headers = {
+            "X-RapidAPI-Key": API_KEY,
+            "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
+        }
+
+        params = {"fixture": fixture_id}
+
+        res = requests.get(url, headers=headers, params=params, timeout=10)
+
+        if res.status_code != 200:
+            return None
+
+        data = res.json()
+
+        if not data.get("response"):
+            return None
+
+        # 🔹 Tomamos primer bookmaker disponible
+        bookmakers = data["response"][0]["bookmakers"]
+
+        for b in bookmakers:
+            for bet in b["bets"]:
+                if bet["name"] == "Match Winner":
+                    values = bet["values"]
+
+                    odds = {v["value"]: float(v["odd"]) for v in values}
+
+                    return odds.get("Home"), odds.get("Draw"), odds.get("Away")
+
+        return None
+
+    except:
+        return None
+# =========================================================
 # 📥 DATA (BASE)
 # =========================================================
 @st.cache_data
