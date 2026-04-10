@@ -3,170 +3,250 @@ import pandas as pd
 from datetime import datetime
 
 st.set_page_config(layout="wide")
-
-st.title("🔥 GENIE PRO REAL")
+st.title("🔥 GENIE PRO REAL — ELITE")
 
 # =========================================================
-# 📥 LOAD FIXTURES (FUENTE REAL)
+# 📥 DATA
 # =========================================================
 @st.cache_data
 def load_data():
     url = "https://www.football-data.co.uk/fixtures.csv"
     df = pd.read_csv(url)
 
-    df = df.dropna(subset=["HomeTeam", "AwayTeam", "PSH", "PSD", "PSA"])
+    df = df.dropna(subset=["HomeTeam", "AwayTeam"])
+    df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
 
-    return df
+    today = datetime.today()
+    df_future = df[df["Date"] >= today]
+
+    if df_future.empty:
+        df_future = df.sort_values("Date").tail(40)
+
+    if "B365H" in df.columns:
+        df_future["H"] = df_future["B365H"]
+        df_future["D"] = df_future["B365D"]
+        df_future["A"] = df_future["B365A"]
+    else:
+        df_future["H"] = df_future["PSH"]
+        df_future["D"] = df_future["PSD"]
+        df_future["A"] = df_future["PSA"]
+
+    df_future = df_future.dropna(subset=["H", "D", "A"])
+
+    return df_future
+
 
 df = load_data()
 
-if df.empty:
-    st.error("No fixtures available")
-    st.stop()
-
 # =========================================================
-# 🧠 BUILD MATCH LIST
+# 🧠 CORE ANALYSIS
 # =========================================================
-matches = []
+def analyze(psh, psd, psa):
 
-for _, row in df.iterrows():
-    match = f"{row['HomeTeam']} vs {row['AwayTeam']} | {row['Div']}"
-    matches.append(match)
+    imp_h = 1 / psh
+    imp_d = 1 / psd
+    imp_a = 1 / psa
 
-selected = st.selectbox("Selecciona partido", matches)
+    overround = imp_h + imp_d + imp_a
 
-row = df.iloc[matches.index(selected)]
+    real_h = imp_h / overround
+    real_d = imp_d / overround
+    real_a = imp_a / overround
 
-home = row["HomeTeam"]
-away = row["AwayTeam"]
-league = row["Div"]
+    confidence = round((1 - (overround - 1)) * 10, 2)
 
-psh = float(row["PSH"])
-psd = float(row["PSD"])
-psa = float(row["PSA"])
-
-# =========================================================
-# 🧠 GENIE CORE ANALYSIS
-# =========================================================
-
-def analyze_match(psh, psd, psa):
-
-    confidence = round(10 - ((psh + psa) / 2), 2)
-
-    # 🎯 MARKET STRUCTURE
-    if psh < 1.80:
-        structure = "STRONG FAVORITE"
-        tempo = "CONTROLLED"
-        setup = "LAY DRAW / BACK FAVORITE"
-
-    elif abs(psh - psa) < 0.40:
-        structure = "BALANCED"
-        tempo = "HIGH VARIANCE"
-        setup = "OVER 2.5 / BTTS"
-
-    elif psd > 3.60:
-        structure = "CHAOTIC"
-        tempo = "HIGH TEMPO"
-        setup = "LAY DRAW / LATE GOAL TRADE"
-
+    # ESTRUCTURA
+    if psh < 1.65:
+        structure = "Strong Favorite"
+        bias = "Home Control"
+    elif abs(psh - psa) < 0.25:
+        structure = "Even Match"
+        bias = "No clear dominance"
     else:
-        structure = "SEMI-BALANCED"
-        tempo = "MEDIUM"
-        setup = "WAIT / READ MARKET"
+        structure = "Moderate Edge"
+        bias = "Slight advantage"
 
-    # 💰 VALUE DETECTOR
-    implied_home = 1 / psh
-    implied_away = 1 / psa
+    # TEMPO
+    volatility = abs(psh - psa)
 
-    if implied_home > 0.60:
-        value = "HOME VALUE"
-    elif implied_away > 0.45:
-        value = "AWAY VALUE"
+    if volatility < 0.30:
+        tempo = "High volatility"
+    elif volatility < 0.80:
+        tempo = "Balanced"
     else:
-        value = "NO CLEAR VALUE"
+        tempo = "Controlled"
+
+    # VALUE
+    if real_h > 0.58:
+        value = "Home side pressure"
+    elif real_a > 0.42:
+        value = "Away side threat"
+    else:
+        value = "Market efficient"
+
+    # SETUPS
+    setups = []
+
+    if structure == "Strong Favorite":
+        setups += [
+            "Lay Draw (early phase)",
+            "Back Favorite (price compression)",
+            "Over 1.5 if dominance confirmed"
+        ]
+
+    if structure == "Even Match":
+        setups += [
+            "Over 2.5",
+            "BTTS",
+            "Momentum swings trading"
+        ]
+
+    if psd > 3.6:
+        setups.append("Lay Draw late scenario")
+
+    # SCENARIOS
+    scenarios = [
+        "Early goal → strong market reaction",
+        "0-0 phase → odds drift and tension",
+        "Underdog goal → sharp reversal"
+    ]
+
+    # RIESGOS
+    risks = [
+        "Low attacking efficiency",
+        "False dominance (possession sin peligro)",
+        "Unexpected red card / disruption"
+    ]
 
     return {
         "confidence": confidence,
+        "real_probs": (real_h, real_d, real_a),
         "structure": structure,
         "tempo": tempo,
-        "setup": setup,
-        "value": value
+        "value": value,
+        "bias": bias,
+        "setups": setups,
+        "scenarios": scenarios,
+        "risks": risks
     }
 
-analysis = analyze_match(psh, psd, psa)
 
 # =========================================================
-# 🎯 UI OUTPUT
+# 🏆 RANKING
 # =========================================================
+ranking = []
 
+for _, r in df.iterrows():
+    a = analyze(r.H, r.D, r.A)
+    score = a["confidence"]
+    ranking.append({
+        "match": f"{r.HomeTeam} vs {r.AwayTeam}",
+        "score": score
+    })
+
+ranking_df = pd.DataFrame(ranking).sort_values(by="score", ascending=False)
+
+st.subheader("🏆 TOP PARTIDOS")
+st.dataframe(ranking_df.head(10))
+
+# =========================================================
+# 🎯 SELECT MATCH
+# =========================================================
+matches = [
+    f"{r.HomeTeam} vs {r.AwayTeam} | {r.Div} | {r.Date.strftime('%d/%m')}"
+    for _, r in df.iterrows()
+]
+
+selected = st.selectbox("Selecciona partido", matches)
+row = df.iloc[matches.index(selected)]
+
+analysis = analyze(row.H, row.D, row.A)
+
+home = row.HomeTeam
+away = row.AwayTeam
+
+# =========================================================
+# 🎯 OUTPUT
+# =========================================================
 st.header(f"{home} vs {away}")
-
-st.write(f"🌍 League: {league}")
-
-# ❌ No fecha en dataset → se explica
-st.write("📅 Date: Not provided (source limitation)")
-st.write("⏰ Time: Not provided")
+st.write(f"🌍 {row.Div}")
+st.write(f"📅 {row.Date.strftime('%d/%m/%Y')}")
 
 st.subheader("💰 Odds")
-st.write(f"Home: {psh}")
-st.write(f"Draw: {psd}")
-st.write(f"Away: {psa}")
+st.write(f"{row.H} | {row.D} | {row.A}")
 
 # =========================================================
-# 🧠 GENIE ANALYSIS (ESTILO REAL)
+# 🧠 ANALISIS DETALLADO
 # =========================================================
+h, d, a = analysis["real_probs"]
 
-st.subheader("🧠 Genie Analysis")
+st.subheader("📊 Probabilidades Reales")
+st.write(f"Home: {round(h*100,1)}%")
+st.write(f"Draw: {round(d*100,1)}%")
+st.write(f"Away: {round(a*100,1)}%")
+
+st.subheader("🧠 Market Structure")
+st.write(f"{analysis['structure']} → {analysis['bias']}")
+
+st.subheader("⚡ Expected Tempo")
+st.write(analysis["tempo"])
+
+st.subheader("💰 Value Insight")
+st.write(analysis["value"])
+
+st.subheader("🎯 Trading Setups")
+for s in analysis["setups"]:
+    st.write(f"👉 {s}")
+
+st.subheader("🎭 Match Scenarios")
+for s in analysis["scenarios"]:
+    st.write(f"- {s}")
+
+st.subheader("⚠️ Risks")
+for r in analysis["risks"]:
+    st.write(f"- {r}")
+
+# =========================================================
+# 🧠 RESUMEN TIPO GENIE (LO IMPORTANTE)
+# =========================================================
+st.subheader("🧠 Professional Summary")
 
 st.markdown(f"""
-**📊 Match Structure:** {analysis['structure']}
+This fixture between **{home} and {away}** is structured as a **{analysis['structure']}** game.
 
-Este partido se define principalmente por la estructura del mercado.  
-Las cuotas indican cómo el mercado percibe la superioridad relativa.
+From a market perspective, this implies **{analysis['bias']}**, meaning the price is likely to react to any confirmation of that dominance.
 
----
+The expected tempo is **{analysis['tempo']}**, which suggests how quickly opportunities may appear.
 
-**⚡ Tempo Esperado:** {analysis['tempo']}
-
-El ritmo esperado del partido viene determinado por la diferencia de fuerzas.  
-Esto afecta directamente la velocidad del mercado en vivo.
+In terms of value, the current read indicates:  
+👉 **{analysis['value']}**
 
 ---
 
-**💰 Value Detectado:** {analysis['value']}
+### 🎯 Trading Perspective
 
-El análisis de probabilidades implícitas sugiere si existe ventaja estructural.  
-No siempre implica apuesta directa, sino contexto.
+This is not about predicting the winner.
 
----
+It is about understanding:
 
-**🎯 Setup Sugerido:**
-
-👉 {analysis['setup']}
-
-Este NO es un pick.  
-Es un **escenario operativo esperado** basado en cómo se comporta el mercado típicamente bajo estas condiciones.
+- Where pressure will come from  
+- When the market is likely to react  
+- How price inefficiencies may appear  
 
 ---
 
-**📈 Lectura del Partido**
+### 📈 Key Insight
 
-- Si el favorito domina → el mercado tenderá a comprimir líneas rápidamente  
-- Si es balanceado → mayor volatilidad y oportunidades en goles  
-- Si es caótico → errores defensivos + transiciones = oportunidades tardías  
+The best opportunities will arise when:
+
+- The match confirms its expected structure  
+- The market reacts slower than the actual game dynamics  
 
 ---
 
-**🧠 Interpretación Tipo Trader**
-
-Este análisis no busca predecir el resultado.  
-Busca definir **cómo se moverá el mercado**.
-
-Tu ventaja está en ejecutar mejor que el mercado.
+👉 Your edge is not prediction.  
+👉 Your edge is execution.
 """)
 
-# =========================================================
-# ⭐ CONFIDENCE
-# =========================================================
-st.subheader("⭐ Confidence Rating")
+st.subheader("⭐ Confidence")
 st.write(f"{analysis['confidence']} / 10")
