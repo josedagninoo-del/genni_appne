@@ -526,11 +526,6 @@ label, score = classify_match(ph, pa, goals, row.H)
 context, tempo, execution = narrative_engine(home, away, ph, pa, goals, xg_h, xg_a, strategy)
 
 # =========================================================
-# 🔧 SINCRONIZAR EJECUCIÓN CON ESTRATEGIA REAL
-# =========================================================
-if final_strategy and "execution" in final_strategy:
-    execution = final_strategy["execution"]
-# =========================================================
 # 🎯 GENERAR ESTRATEGIA PRO
 # =========================================================
 strategy_data = strategy_engine(home, away, ph, pa, goals, xg_h, xg_a)
