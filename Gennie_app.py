@@ -6,6 +6,53 @@ st.set_page_config(layout="wide")
 st.title("🔥 GENIE PRO REAL — ELITE")
 
 # =========================================================
+# 📡 API DATA (AGREGADO)
+# =========================================================
+import requests
+
+def load_api_data():
+    try:
+        API_KEY = st.secrets.get("API_KEY", "")
+
+        url = "https://api-football-v1.p.rapidapi.com/v3/fixtures"
+        headers = {
+            "X-RapidAPI-Key": API_KEY,
+            "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
+        }
+
+        params = {
+            "date": datetime.today().strftime("%Y-%m-%d")
+        }
+
+        res = requests.get(url, headers=headers, params=params, timeout=10)
+
+        if res.status_code != 200:
+            return None
+
+        data = res.json()
+
+        rows = []
+        for m in data.get("response", []):
+            rows.append({
+                "HomeTeam": m["teams"]["home"]["name"],
+                "AwayTeam": m["teams"]["away"]["name"],
+                "Div": m["league"]["name"],
+                "Date": m["fixture"]["date"][:10],
+                "H": 2.2,
+                "D": 3.2,
+                "A": 3.0
+            })
+
+        df_api = pd.DataFrame(rows)
+
+        if not df_api.empty:
+            df_api["Date"] = pd.to_datetime(df_api["Date"])
+            st.success("✅ API PRO activa")
+            return df_api
+
+    except:
+        return None
+# =========================================================
 # 📥 DATA (BASE)
 # =========================================================
 @st.cache_data
