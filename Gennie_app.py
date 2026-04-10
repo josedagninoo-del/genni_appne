@@ -343,6 +343,31 @@ Aplicar **{strategy}** siguiendo confirmación del desarrollo real del partido.
 # =========================================================
 def strategy_engine(home, away, ph, pa, goals, xg_h, xg_a):
 
+        # =========================================================
+    # 🧠 GENIE GAMBIT 2.0 (AGREGADO — PRIORIDAD ALTA)
+    # =========================================================
+    if ph > 0.58 and goals > 2.6:
+
+        return {
+            "name": "GENIE GAMBIT 2.0",
+            "criteria": "Favorito claro + partido abierto + edge en doble mercado",
+            "description": "Estrategia combinada que explota la ventaja del favorito junto con la expectativa de goles.",
+            "entry": "Pre-match + Over 2.5 cuando cuota ≥ 2.0",
+            "execution": """
+1. Back 50% del stake al favorito inmediatamente  
+2. Esperar subida de cuota en Over 2.5 a ~2.0  
+3. Back restante 50% en Over 2.5  
+
+🎯 Objetivo:
+Capturar beneficio en ambos mercados tras el primer gol  
+
+📈 Salida:
+Cerrar cuando ambos mercados estén en verde  
+
+⚠ Riesgo:
+0-0 prolongado o gol del underdog
+"""
+        }
     # =============================
     # 🎯 LAY THE DIP
     # =============================
@@ -635,7 +660,60 @@ st.markdown(f"""
 ### 📌 Plan de ejecución
 {final_strategy['execution']}
 """)
+# =========================================================
+# 🧠 BLOQUE PRO — GENIE GAMBIT 2.0 (AGREGADO)
+# =========================================================
 
+if "GAMBIT" in final_strategy["name"].upper():
+
+    st.markdown("## 🧠 GENIE GAMBIT 2.0 — PLAN PROFESIONAL")
+
+    st.markdown("""
+**📌 Strategy Summary**  
+With this gambit, we will be hedging across both match odds and goal market.  
+Best scenario is two goals for the favorite but you must be prepared to pivot in other scenarios.
+
+---
+
+**📊 Market to Trade**  
+- Match Odds  
+- Over 2.5 Goals  
+
+---
+
+**🎯 Strategy Style**  
+- Back to Lay  
+
+---
+
+**💰 Market Entry Staking**  
+- Back 50% of your stake on your favorite (NOT the market’s one) immediately  
+- Back remaining 50% on Over 2.5 Goals once odds reach 2.0  
+
+---
+
+**🚪 Profit Exit Strategy**  
+- Secure profits early  
+- If both markets turn green after the first goal → lock in gains  
+
+---
+
+**🛠 Recovery Strategy**  
+- If match is 0-0 at Half Time → Lay Under 1.5 Goals  
+- Monitor combined exposure constantly  
+- Adjust risk dynamically after each goal  
+
+---
+
+**🏦 Bankroll Management**  
+- Use 3% of total bankroll  
+
+---
+
+**⚠️ Execution Insight (CLAVE)**  
+No estás apostando resultados, estás explotando movimientos de mercado.  
+El edge viene del timing del gol y la reacción del precio.
+""")
 # 🔥 NUEVO BLOQUE 1
 st.subheader("🧠 LECTURA PROFESIONAL DEL PARTIDO")
 st.markdown(f"""
