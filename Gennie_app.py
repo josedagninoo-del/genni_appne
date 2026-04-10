@@ -572,7 +572,7 @@ else:
 # =========================================================
 trends = generate_trends(home, away, ph, pa, goals)
 
-summary = professional_summary(home, away, ph, pa, goals, final_strategy["name"])
+summary = professional_summary(home, away, ph, pa, goals, strategy)
 
 # =========================================================
 # DISPLAY (BASE + AGREGADOS)
