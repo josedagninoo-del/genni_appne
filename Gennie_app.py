@@ -50,7 +50,6 @@ def genie_analysis(home, away, h, d, a):
     xg_home = round(total_goals * ph, 2)
     xg_away = round(total_goals * pa, 2)
 
-    # ===== NARRATIVA ORIGINAL
     if total_goals > 2.8:
         goals_trend = "Alta tendencia a Over 2.5"
     elif total_goals > 2.4:
@@ -72,7 +71,6 @@ def genie_analysis(home, away, h, d, a):
     else:
         tactics = "Dominio ligero + transiciones"
 
-    # ===== ESTRATEGIA ORIGINAL
     if total_goals > 2.6:
         strategy = "LAY THE DIP"
         market = "Under 2.5"
@@ -95,7 +93,36 @@ def genie_analysis(home, away, h, d, a):
 
 
 # =========================================================
-# 🧠 NUEVO: CLASIFICACIÓN (SIN ROMPER BASE)
+# 🧠 NUEVO: VALUE + ESTRATEGIA PRO
+# =========================================================
+def elite_insight(home, away, ph, pa, goals, h, a):
+
+    # VALUE
+    value = "No claro"
+    if ph > 0.55 and h > 2.0:
+        value = f"VALUE en {home}"
+    elif pa > 0.45 and a > 2.2:
+        value = f"VALUE en {away}"
+
+    # ESTRATEGIAS AVANZADAS
+    if goals > 2.8:
+        strat = "🔥 Lay The Dip"
+        desc = "Esperar sin gol → Lay Under cuando baje cuota"
+    elif ph > 0.60:
+        strat = "⚡ Momentum Trade"
+        desc = f"Back {home} → salir tras gol"
+    elif ph > 0.52 and goals > 2.5:
+        strat = "💣 Genie Gambit"
+        desc = "Favorito + Over 2.5"
+    else:
+        strat = "🎯 Goals Flow"
+        desc = "Over / BTTS por dinámica abierta"
+
+    return value, strat, desc
+
+
+# =========================================================
+# 🧠 CLASIFICACIÓN (TUYA)
 # =========================================================
 def classify_match(ph, pa, goals, h):
 
@@ -130,7 +157,7 @@ def classify_match(ph, pa, goals, h):
 
 
 # =========================================================
-# 🚨 CONCLUSIÓN OPERATIVA (CLAVE)
+# 🚨 CONCLUSIÓN GLOBAL
 # =========================================================
 st.subheader("🚨 CONCLUSIÓN OPERATIVA")
 
@@ -182,8 +209,10 @@ ph, pa, goals, xg_h, xg_a, goals_trend, scoring, tactics, strategy, market, entr
 
 label, score = classify_match(ph, pa, goals, row.H)
 
+value, elite_strat, strat_desc = elite_insight(home, away, ph, pa, goals, row.H, row.A)
+
 # =========================================================
-# 📊 DISPLAY COMPLETO (NARRATIVO)
+# 📊 DISPLAY FINAL (MEJORADO)
 # =========================================================
 st.header(f"{home} vs {away}")
 st.write(f"🌍 {row.Div}")
@@ -206,34 +235,44 @@ st.markdown(f"""
 
 ### 🧩 Team Tactics
 {tactics}
+
+---
+
+### 💰 VALUE
+👉 {value}
+
+---
+
+### 🔥 ESTRATEGIA PRO
+**{elite_strat}**
+
+{strat_desc}
 """)
 
-st.subheader("🎯 ESTRATEGIA DE TRADING")
-
+st.subheader("🎯 ESTRATEGIA BASE")
 st.markdown(f"""
-**Strategy:** {strategy}  
-**Market:** {market}  
-
-**Entry:** {entry}  
-**Exit:** {exit}  
-
-👉 Este setup busca explotar el comportamiento del mercado más que el resultado.
+Strategy: {strategy}  
+Market: {market}  
+Entry: {entry}  
+Exit: {exit}  
 """)
 
 st.subheader("🧠 RESUMEN PROFESIONAL")
 
 st.markdown(f"""
-Este partido está clasificado como **{label}**, lo que indica una estructura clara para trading.
+Este partido está clasificado como **{label}**.
 
-El modelo proyecta:
 - xG: {xg_h} vs {xg_a}
-- Expectativa de goles: {round(goals,2)}
+- Goles esperados: {round(goals,2)}
 
-👉 La clave está en la reacción del mercado al primer evento clave (gol o presión inicial).
+👉 El edge está en cómo reacciona el mercado, no en el resultado.
 
-🎯 Estrategia recomendada: **{strategy}**
+✔ Probabilidad implícita clara  
+✔ Escenario táctico definido  
+✔ Oportunidad de trading identificada  
 
-Esto no es predicción, es ventaja de mercado.
+🎯 Mejor enfoque:
+**{elite_strat} + {strategy}**
 """)
 
 st.subheader("⭐ Confidence")
