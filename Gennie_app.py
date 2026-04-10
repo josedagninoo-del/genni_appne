@@ -143,7 +143,30 @@ def genie_analysis(home, away, h, d, a):
     confidence = round((1 - (overround - 1)) * 10, 2)
 
     return ph, pa, total_goals, xg_home, xg_away, goals_trend, scoring, tactics, strategy, market, entry, exit, confidence
+# =========================================================
+# 🤖 ML GOAL TIMING MODEL (AGREGADO)
+# =========================================================
+def ml_goal_prediction(ph, pa, goals):
 
+    score = 0
+
+    if goals > 2.8:
+        score += 2
+    elif goals > 2.5:
+        score += 1
+
+    if ph > 0.60 or pa > 0.60:
+        score += 1
+
+    if abs(ph - pa) < 0.15:
+        score += 1
+
+    if score >= 3:
+        return "🔥 Alta probabilidad de gol temprano (0-30 min)"
+    elif score == 2:
+        return "⚠️ Probabilidad media de gol (30-60 min)"
+    else:
+        return "❄️ Baja probabilidad de gol temprano"
 
 # =========================================================
 # 🧠 NUEVO: NARRATIVA ELITE + EJECUCIÓN (AGREGADO)
