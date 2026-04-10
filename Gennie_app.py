@@ -342,7 +342,6 @@ Aplicar **{strategy}** siguiendo confirmación del desarrollo real del partido.
 # =========================================================
 def strategy_engine(home, away, ph, pa, goals, xg_h, xg_a):
 
- def strategy_engine(home, away, ph, pa, goals, xg_h, xg_a):
 
     edge = abs(ph - pa)
 
