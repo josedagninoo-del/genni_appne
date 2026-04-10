@@ -659,7 +659,7 @@ st.markdown(f"""
 {final_strategy['entry']}
 
 ---
-### 📌 Plan de ejecución
+###  Plan de ejecución
 {final_strategy['execution']}
 """)
 # =========================================================
@@ -671,7 +671,7 @@ if "GAMBIT" in final_strategy["name"].upper():
     st.markdown("## 🧠 GENIE GAMBIT 2.0 — PLAN PROFESIONAL")
 
     st.markdown("""
-**📌 Strategy Summary**  
+** Strategy Summary**  
 With this gambit, we will be hedging across both match odds and goal market.  
 Best scenario is two goals for the favorite but you must be prepared to pivot in other scenarios.
 
