@@ -538,6 +538,28 @@ context, tempo, execution = narrative_engine(home, away, ph, pa, goals, xg_h, xg
 strategy_data = strategy_engine(home, away, ph, pa, goals, xg_h, xg_a)
 
 # =========================================================
+# 🔧 FIX CONSISTENCIA DE ESTRATEGIA (AGREGADO)
+# =========================================================
+final_strategy = strategy_data
+
+# Si el motor base sugiere LAY THE DIP pero el modelo pro no coincide
+if "LAY THE DIP" in strategy and strategy_data["name"] != "LAY THE DIP":
+    final_strategy = {
+        "name": "LAY THE DIP",
+        "criteria": "Alta expectativa de gol temprano",
+        "description": "Mercado sobreajusta el Under sin gol temprano",
+        "entry": entry,
+        "execution": f"""
+Se mantiene estrategia base:
+
+Entrada: {entry}
+Salida: {exit}
+
+⚠ Ejecutar según ritmo real del partido
+"""
+    }
+
+# =========================================================
 # 📊 GENERAR TENDENCIAS (AGREGADO)
 # =========================================================
 trends = generate_trends(home, away, ph, pa, goals)
@@ -581,20 +603,20 @@ st.markdown(f"""
 st.subheader("🎯 ESTRATEGIA DE TRADING")
 
 st.markdown(f"""
-### 🧠 Estrategia: {strategy_data['name']}
+### 🧠 Estrategia: {final_strategy['name']}
 
 📊 **Criterio**
-{strategy_data['criteria']}
+{final_strategy['criteria']}
 
 🧩 **Descripción**
-{strategy_data['description']}
+{final_strategy['description']}
 
 ⏱ **Entrada**
-{strategy_data['entry']}
+{final_strategy['entry']}
 
 ---
 ### 📌 Plan de ejecución
-{strategy_data['execution']}
+{final_strategy['execution']}
 """)
 
 # 🔥 NUEVO BLOQUE 1
