@@ -381,15 +381,33 @@ Si estás en rojo tras primer gol, mantener posición esperando segundo gol
 """
         }
     # =========================================================
-    # 🎯 LAY THE DIP (PARTIDO ABIERTO SIN FAVORITO CLARO)
+    # 🎯 LAY THE DIP (VERSIÓN PRO)
     # =========================================================
     elif goals >= 2.8 and edge <= 0.12 and ph < 0.60 and pa < 0.60:
+
         return {
             "name": "LAY THE DIP",
-            "criteria": "Partido abierto y equilibrado",
-            "description": "Mercado sobreajusta Under",
-            "entry": "Min 10-15",
-            "execution": "Lay Under 2.5"
+            "criteria": "Partido abierto + equilibrio + alta probabilidad de gol temprano",
+            "description": "Aprovecha la caída de cuota del Under 2.5 en los primeros minutos sin gol para capturar valor antes del primer gol.",
+            "entry": "Min 10 (50%) + Min 25 (50%)",
+            "execution": """
+1. Esperar 10 minutos sin gol  
+2. Hacer Lay al Under 2.5 con 50% del stake  
+3. Si sigue 0-0, añadir el otro 50% en minuto 25  
+
+🎯 Objetivo:
+Capturar subida de cuota tras 1-2 goles  
+
+📈 Salida:
+- Cerrar tras primer gol si cashout es negativo  
+- Mantener hasta 2 goles para maximizar beneficio  
+
+⏱ Salida máxima:
+Minuto 65  
+
+⚠ Riesgo:
+Partido sin ritmo ofensivo real
+"""
         }
 
     # =========================================================
@@ -690,6 +708,28 @@ if "FIREBALL" in final_strategy["name"].upper():
 This strategy depends on early attacking intent.  
 You are trading volatility and timing, not just probability.
 """)
+# =========================================================
+# 🎯 BLOQUE PRO — LAY THE DIP
+# =========================================================
+if "LAY THE DIP" in final_strategy["name"].upper():
+
+    st.markdown("## 🎯 LAY THE DIP — PLAN PROFESIONAL")
+
+    st.markdown("""
+**📌 Strategy Summary:** If the early stages of the match are goalless, the price of Under 2.5 goals will dip, creating a prime moment to lay.  
+With a high likelihood of early goals, there’s solid value capturing these price swings.
+**📊 Market to Trade:**Lay Under 2.5 Goals  
+**🎯 Strategy Style:**Lay to Back  
+**⏱ Market Entry Timing:** Minute 10 → 50% stake  Minute 25  remaining 50% if still 0-0  
+**🎯 Goal Target:** Aim to secure profit after 2 goals  
+**🚪 Market Exit:** Exit at minute 65 (max exposure)  
+**📈 Profit Exit Instructions:** If first goal → close immediately if cashout is negative If positive → let trade run for full potential  
+**🏦 Bankroll Management:**Use 3% of bankroll  
+
+**⚠️ Execution Insight (CLAVE)**  
+This is a time-decay strategy.  
+You are exploiting price compression in the Under market before goals arrive.
+""")    
 # 🔥 NUEVO BLOQUE 1
 st.subheader("🧠 LECTURA PROFESIONAL DEL PARTIDO")
 st.markdown(f"""
