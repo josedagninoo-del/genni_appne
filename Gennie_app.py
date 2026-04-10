@@ -98,8 +98,6 @@ def load_real_odds(fixture_id):
 # 📥 DATA (BASE)
 # =========================================================
 @st.cache_data
-def load_data():
-
     # 🔥 PRIORIDAD API
     df_api = load_api_data()
     if df_api is not None:
