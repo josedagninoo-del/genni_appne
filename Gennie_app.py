@@ -22,14 +22,9 @@ def load_data():
     if df_future.empty:
         df_future = df.sort_values("Date").tail(40)
 
-    if "B365H" in df.columns:
-        df_future["H"] = df_future["B365H"]
-        df_future["D"] = df_future["B365D"]
-        df_future["A"] = df_future["B365A"]
-    else:
-        df_future["H"] = df_future["PSH"]
-        df_future["D"] = df_future["PSD"]
-        df_future["A"] = df_future["PSA"]
+    df_future["H"] = df_future["B365H"]
+    df_future["D"] = df_future["B365D"]
+    df_future["A"] = df_future["B365A"]
 
     df_future = df_future.dropna(subset=["H", "D", "A"])
 
@@ -39,134 +34,126 @@ def load_data():
 df = load_data()
 
 # =========================================================
-# 🧠 CORE ANALYSIS
+# 🧠 ENGINE GENIE
 # =========================================================
-def analyze(psh, psd, psa):
+def genie_analysis(home, away, h, d, a):
 
-    imp_h = 1 / psh
-    imp_d = 1 / psd
-    imp_a = 1 / psa
-
+    imp_h = 1 / h
+    imp_d = 1 / d
+    imp_a = 1 / a
     overround = imp_h + imp_d + imp_a
 
-    real_h = imp_h / overround
-    real_d = imp_d / overround
-    real_a = imp_a / overround
+    ph = imp_h / overround
+    pd_ = imp_d / overround
+    pa = imp_a / overround
+
+    # ===== xG ESTIMADO (clave)
+    total_goals = 2.4 + (abs(h - a) * 0.6)
+    xg_home = round(total_goals * ph, 2)
+    xg_away = round(total_goals * pa, 2)
+
+    # ===== GOAL TRENDS
+    if total_goals > 2.8:
+        goals_trend = "Alta tendencia a Over 2.5"
+    elif total_goals > 2.4:
+        goals_trend = "Partido abierto moderado"
+    else:
+        goals_trend = "Tendencia Under / controlado"
+
+    # ===== SCORING PATTERNS
+    if ph > 0.60:
+        scoring = f"{home} tiende a marcar primero y dominar fases iniciales"
+    elif pa > 0.45:
+        scoring = f"{away} peligroso en transiciones y gol temprano"
+    else:
+        scoring = "Ambos equipos con probabilidad de intercambio"
+
+    # ===== TEAM TACTICS (lectura mercado)
+    if h < 1.70:
+        tactics = f"{home} dominará posesión y presión alta, {away} replegado + contra"
+    elif abs(h - a) < 0.3:
+        tactics = "Partido táctico equilibrado con presión media-alta de ambos"
+    else:
+        tactics = "Dominio ligero + transiciones rápidas"
+
+    # ===== RECENT FORM (proxy inteligente)
+    if h < 1.80:
+        form = f"{home} llega en mejor forma estructural según mercado"
+    elif a < 2.20:
+        form = f"{away} competitivo y peligroso"
+    else:
+        form = "Forma inconsistente en ambos lados"
+
+    # =========================================================
+    # 🎯 ESTRATEGIA GENIE REAL
+    # =========================================================
+    if total_goals > 2.6:
+
+        strategy = "LAY THE DIP"
+        market = "Under 2.5 Goals"
+        entry = "Minuto 10-15 si no hay gol"
+        exit = "Tras primer gol o minuto 65"
+        style = "Lay → Back"
+
+        rationale = "Alta expectativa de gol genera caída artificial en Under"
+
+    elif ph > 0.58:
+
+        strategy = "FAVORITO PRESIÓN"
+        market = "Match Odds"
+        entry = "Minuto 5-15"
+        exit = "Tras gol del favorito"
+        style = "Back → Lay"
+
+        rationale = "Dominio esperado del favorito con presión constante"
+
+    else:
+
+        strategy = "MOMENTUM / OVER"
+        market = "Over 2.5 / BTTS"
+        entry = "Lectura en vivo (15-25)"
+        exit = "Tras 1-2 goles"
+        style = "Back"
+
+        rationale = "Partido abierto con intercambio de ocasiones"
 
     confidence = round((1 - (overround - 1)) * 10, 2)
 
-    # ESTRUCTURA
-    if psh < 1.65:
-        structure = "Strong Favorite"
-        bias = "Home Control"
-    elif abs(psh - psa) < 0.25:
-        structure = "Even Match"
-        bias = "No clear dominance"
-    else:
-        structure = "Moderate Edge"
-        bias = "Slight advantage"
-
-    # TEMPO
-    volatility = abs(psh - psa)
-
-    if volatility < 0.30:
-        tempo = "High volatility"
-    elif volatility < 0.80:
-        tempo = "Balanced"
-    else:
-        tempo = "Controlled"
-
-    # VALUE
-    if real_h > 0.58:
-        value = "Home side pressure"
-    elif real_a > 0.42:
-        value = "Away side threat"
-    else:
-        value = "Market efficient"
-
-    # SETUPS
-    setups = []
-
-    if structure == "Strong Favorite":
-        setups += [
-            "Lay Draw (early phase)",
-            "Back Favorite (price compression)",
-            "Over 1.5 if dominance confirmed"
-        ]
-
-    if structure == "Even Match":
-        setups += [
-            "Over 2.5",
-            "BTTS",
-            "Momentum swings trading"
-        ]
-
-    if psd > 3.6:
-        setups.append("Lay Draw late scenario")
-
-    # SCENARIOS
-    scenarios = [
-        "Early goal → strong market reaction",
-        "0-0 phase → odds drift and tension",
-        "Underdog goal → sharp reversal"
-    ]
-
-    # RIESGOS
-    risks = [
-        "Low attacking efficiency",
-        "False dominance (possession sin peligro)",
-        "Unexpected red card / disruption"
-    ]
-
     return {
-        "confidence": confidence,
-        "real_probs": (real_h, real_d, real_a),
-        "structure": structure,
-        "tempo": tempo,
-        "value": value,
-        "bias": bias,
-        "setups": setups,
-        "scenarios": scenarios,
-        "risks": risks
+        "xg_home": xg_home,
+        "xg_away": xg_away,
+        "goals_trend": goals_trend,
+        "scoring": scoring,
+        "tactics": tactics,
+        "form": form,
+        "strategy": strategy,
+        "market": market,
+        "entry": entry,
+        "exit": exit,
+        "style": style,
+        "rationale": rationale,
+        "confidence": confidence
     }
 
 
 # =========================================================
-# 🏆 RANKING
-# =========================================================
-ranking = []
-
-for _, r in df.iterrows():
-    a = analyze(r.H, r.D, r.A)
-    score = a["confidence"]
-    ranking.append({
-        "match": f"{r.HomeTeam} vs {r.AwayTeam}",
-        "score": score
-    })
-
-ranking_df = pd.DataFrame(ranking).sort_values(by="score", ascending=False)
-
-st.subheader("🏆 TOP PARTIDOS")
-st.dataframe(ranking_df.head(10))
-
-# =========================================================
-# 🎯 SELECT MATCH
+# 🎯 SELECTOR
 # =========================================================
 matches = [
-    f"{r.HomeTeam} vs {r.AwayTeam} | {r.Div} | {r.Date.strftime('%d/%m')}"
+    f"{r.HomeTeam} vs {r.AwayTeam} | {r.Div} | {r.Date.strftime('%d/%m/%Y')}"
     for _, r in df.iterrows()
 ]
 
 selected = st.selectbox("Selecciona partido", matches)
 row = df.iloc[matches.index(selected)]
 
-analysis = analyze(row.H, row.D, row.A)
-
 home = row.HomeTeam
 away = row.AwayTeam
 
+analysis = genie_analysis(home, away, row.H, row.D, row.A)
+
 # =========================================================
-# 🎯 OUTPUT
+# 📊 HEADER
 # =========================================================
 st.header(f"{home} vs {away}")
 st.write(f"🌍 {row.Div}")
@@ -176,76 +163,68 @@ st.subheader("💰 Odds")
 st.write(f"{row.H} | {row.D} | {row.A}")
 
 # =========================================================
-# 🧠 ANALISIS DETALLADO
+# 🧠 GENIE ANALYSIS
 # =========================================================
-h, d, a = analysis["real_probs"]
-
-st.subheader("📊 Probabilidades Reales")
-st.write(f"Home: {round(h*100,1)}%")
-st.write(f"Draw: {round(d*100,1)}%")
-st.write(f"Away: {round(a*100,1)}%")
-
-st.subheader("🧠 Market Structure")
-st.write(f"{analysis['structure']} → {analysis['bias']}")
-
-st.subheader("⚡ Expected Tempo")
-st.write(analysis["tempo"])
-
-st.subheader("💰 Value Insight")
-st.write(analysis["value"])
-
-st.subheader("🎯 Trading Setups")
-for s in analysis["setups"]:
-    st.write(f"👉 {s}")
-
-st.subheader("🎭 Match Scenarios")
-for s in analysis["scenarios"]:
-    st.write(f"- {s}")
-
-st.subheader("⚠️ Risks")
-for r in analysis["risks"]:
-    st.write(f"- {r}")
-
-# =========================================================
-# 🧠 RESUMEN TIPO GENIE (LO IMPORTANTE)
-# =========================================================
-st.subheader("🧠 Professional Summary")
+st.subheader("🧠 GENIE ANALYSIS")
 
 st.markdown(f"""
-This fixture between **{home} and {away}** is structured as a **{analysis['structure']}** game.
+### 📊 xG Analysis
+- {home}: **{analysis['xg_home']} xG**
+- {away}: **{analysis['xg_away']} xG**
 
-From a market perspective, this implies **{analysis['bias']}**, meaning the price is likely to react to any confirmation of that dominance.
+### ⚽ Goal Trends
+{analysis['goals_trend']}
 
-The expected tempo is **{analysis['tempo']}**, which suggests how quickly opportunities may appear.
+### 📈 Recent Form
+{analysis['form']}
 
-In terms of value, the current read indicates:  
-👉 **{analysis['value']}**
+### 🎯 Scoring Patterns
+{analysis['scoring']}
 
----
+### 🧩 Team Tactics
+{analysis['tactics']}
+""")
 
-### 🎯 Trading Perspective
+# =========================================================
+# 🎯 ESTRATEGIA DETALLADA
+# =========================================================
+st.subheader("🎯 ESTRATEGIA DE TRADING")
 
-This is not about predicting the winner.
+st.markdown(f"""
+### 📌 Strategy: {analysis['strategy']}
 
-It is about understanding:
+**📊 Market:** {analysis['market']}  
+**🎮 Style:** {analysis['style']}  
 
-- Where pressure will come from  
-- When the market is likely to react  
-- How price inefficiencies may appear  
+**⏱ Entry:** {analysis['entry']}  
+**🏁 Exit:** {analysis['exit']}  
 
----
+**🧠 Rationale:**  
+{analysis['rationale']}
+""")
 
-### 📈 Key Insight
+# =========================================================
+# 🧠 RESUMEN PROFESIONAL
+# =========================================================
+st.subheader("🧠 RESUMEN PROFESIONAL")
 
-The best opportunities will arise when:
+st.markdown(f"""
+Este partido entre **{home} y {away}** presenta un escenario donde el mercado anticipa un encuentro **{analysis['goals_trend']}**.
 
-- The match confirms its expected structure  
-- The market reacts slower than the actual game dynamics  
+El modelo proyecta un xG de **{analysis['xg_home']} vs {analysis['xg_away']}**, lo que indica que el partido puede desarrollarse con un ritmo definido por **{analysis['tactics']}**.
 
----
+Desde la perspectiva de trading, el valor no está en predecir el resultado, sino en **cómo reaccionará el mercado ante los eventos clave**.
 
-👉 Your edge is not prediction.  
-👉 Your edge is execution.
+👉 La clave estará en:
+- Confirmación temprana del ritmo esperado  
+- Reacción del mercado al primer gol  
+- Identificación de movimientos de cuota lentos  
+
+🎯 **Estrategia recomendada:** {analysis['strategy']}
+
+Este tipo de partido ofrece oportunidades claras si se ejecuta con disciplina y timing correcto.
+
+👉 No es predicción. Es lectura de mercado.
 """)
 
 st.subheader("⭐ Confidence")
