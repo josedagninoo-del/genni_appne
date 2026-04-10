@@ -381,18 +381,25 @@ Buscar ROI del 30% tras gol
 Si estás en rojo tras primer gol, mantener posición esperando segundo gol
 """
         }
-    # =========================================================
-    # 🎯 LAY THE DIP (PARTIDO ABIERTO SIN FAVORITO CLARO)
-    # =========================================================
-    elif goals >= 2.8 and edge <= 0.12 and ph < 0.60 and pa < 0.60:
-        return {
-            "name": "LAY THE DIP",
-            "criteria": "Partido abierto y equilibrado",
-            "description": "Mercado sobreajusta Under",
-            "entry": "Min 10-15",
-            "execution": "Lay Under 2.5"
-        }
+  # =========================================================
+# 🔥 BLOQUE PRO — FIREBALL
+# =========================================================
+if "FIREBALL" in final_strategy["name"].upper():
 
+    st.markdown("## 🔥 FIREBALL — PLAN PROFESIONAL")
+
+    st.markdown("""
+**📌 Strategy Summary:**We will exploit early market odd rise and the high probability of goals to back Over 2.5 goals, profiting from a price collapse immediately after a goal is scored.
+**📊 Market to Trade:** Over 2.5 Goals  
+**🎯 Strategy Style:**Back to Lay  
+**⏱ Market Entry Timing:**50% stake at minute 10 and Remaining 50% at minute 25 if no goal  
+**🎯 Profit Target:**Aim for ~30% ROI after first goal If still red → hold for second goal  
+**🏦 Bankroll Management:**Use 3% of bankroll  
+
+**⚠️ Execution Insight (CLAVE)**  
+This strategy depends on early attacking intent.  
+You are trading volatility and timing, not just probability.
+""")
     # =========================================================
     # ⚡ MOMENTUM (FAVORITO CLARO PERO NO GOLEADA ESPERADA)
     # =========================================================
@@ -692,6 +699,36 @@ You are trading volatility and timing, not just probability.
 No estás apostando resultados, estás explotando movimientos de mercado.  
 El edge viene del timing del gol y la reacción del precio.
 """)
+
+    # =========================================================
+    # 🎯 LAY THE DIP (VERSIÓN PRO)
+    # =========================================================
+    elif goals >= 2.8 and edge <= 0.12 and ph < 0.60 and pa < 0.60:
+
+        return {
+            "name": "LAY THE DIP",
+            "criteria": "Partido abierto + equilibrio + alta probabilidad de gol temprano",
+            "description": "Aprovecha la caída de cuota del Under 2.5 en los primeros minutos sin gol para capturar valor antes del primer gol.",
+            "entry": "Min 10 (50%) + Min 25 (50%)",
+            "execution": """
+1. Esperar 10 minutos sin gol  
+2. Hacer Lay al Under 2.5 con 50% del stake  
+3. Si sigue 0-0, añadir el otro 50% en minuto 25  
+
+🎯 Objetivo:
+Capturar subida de cuota tras 1-2 goles  
+
+📈 Salida:
+- Cerrar tras primer gol si cashout es negativo  
+- Mantener hasta 2 goles para maximizar beneficio  
+
+⏱ Salida máxima:
+Minuto 65  
+
+⚠ Riesgo:
+Partido sin ritmo ofensivo real
+"""
+        }
 # 🔥 NUEVO BLOQUE 1
 st.subheader("🧠 LECTURA PROFESIONAL DEL PARTIDO")
 st.markdown(f"""
