@@ -49,53 +49,153 @@ def genie_analysis(home, away, h, d, a):
     ph = imp_h / overround
     pa = imp_a / overround
 
-    total_goals = 2.4 + (abs(h - a) * 0.6)
+    goals = 2.4 + abs(h - a) * 0.6
 
-    xg_home = round(total_goals * ph, 2)
-    xg_away = round(total_goals * pa, 2)
+    xg_h = round(goals * ph, 2)
+    xg_a = round(goals * pa, 2)
 
-    goals_trend = "Alta tendencia a Over 2.5" if total_goals > 2.8 else "Partido abierto moderado"
-
-    scoring = f"{home} tiende a marcar primero" if ph > 0.60 else "Intercambio probable"
-
-    tactics = f"{home} dominará el juego" if h < 1.7 else "Partido equilibrado"
-
-    strategy = "LAY THE DIP" if total_goals > 2.6 else "OVER / BTTS"
-
-    confidence = round((1 - (overround - 1)) * 10, 2)
-
-    return ph, pa, total_goals, xg_home, xg_away, goals_trend, scoring, tactics, strategy, confidence
-
+    return ph, pa, goals, xg_h, xg_a
 
 # =========================================================
-# NARRATIVA
+# CLASIFICACIÓN
 # =========================================================
-def narrative_engine(home, away, ph, pa, goals, strat):
+def classify(ph, pa, goals, h):
+
+    score = 0
+
+    if abs(ph - pa) > 0.2:
+        score += 3
+    elif abs(ph - pa) > 0.1:
+        score += 2
+    else:
+        score += 1
+
+    if goals > 2.7:
+        score += 3
+    elif goals > 2.4:
+        score += 2
+    else:
+        score += 1
+
+    if 1.7 < h < 2.8:
+        score += 2
+    else:
+        score += 1
+
+    if score >= 7:
+        return "🟢 ENTRADA", score
+    elif score >= 5:
+        return "🟡 LECTURA", score
+    else:
+        return "🔴 EVITAR", score
+
+# =========================================================
+# VALUE
+# =========================================================
+def detect_value(home, away, ph, pa, h, a):
+    if ph > 0.55 and h > 2.0:
+        return f"VALUE en {home}"
+    elif pa > 0.45 and a > 2.2:
+        return f"VALUE en {away}"
+    return "Sin value claro"
+
+# =========================================================
+# ESTRATEGIA
+# =========================================================
+def strategy_engine(home, ph, goals):
+
+    if goals > 2.7:
+        return "🔥 Lay The Dip"
+    elif ph > 0.6:
+        return "⚡ Momentum Trade"
+    elif ph > 0.52 and goals > 2.5:
+        return "💣 Genie Gambit"
+    else:
+        return "🎯 Goals Flow"
+
+# =========================================================
+# NARRATIVA + EJECUCIÓN
+# =========================================================
+def narrative(home, away, ph, pa, goals, strat):
 
     dominance = f"{home} domina el escenario" if ph > 0.6 else "Partido equilibrado"
 
-    tempo = "Ritmo alto" if goals > 2.7 else "Ritmo medio"
+    tempo = "Ritmo alto con probabilidad de gol temprano" if goals > 2.7 else "Ritmo medio"
 
-    if strat == "LAY THE DIP":
+    if "Lay The Dip" in strat:
         execution = """
-✔ Esperar 10-15 min  
-✔ Entrar Lay Under  
-✔ Salir tras gol  
+PLAN:
+1. Esperar 10-15 min sin gol  
+2. Lay Under 2.5  
+3. Salida tras gol  
+
+EDGE: caída artificial de cuota
+"""
+    elif "Momentum" in strat:
+        execution = """
+PLAN:
+1. Confirmar dominio  
+2. Back favorito  
+3. Salida tras gol  
+
+EDGE: anticipación de movimiento
+"""
+    elif "Gambit" in strat:
+        execution = """
+PLAN:
+1. Stake dividido  
+2. Favorito + Over  
+
+EDGE: doble exposición
 """
     else:
         execution = """
-✔ Esperar validación  
-✔ Entrar Over  
-✔ Salir tras goles  
+PLAN:
+1. Leer ritmo  
+2. Entrar Over/BTTS  
+
+EDGE: flujo ofensivo
 """
 
     return dominance, tempo, execution
 
+# =========================================================
+# CONCLUSIÓN GLOBAL
+# =========================================================
+st.subheader("🚨 CONCLUSIÓN OPERATIVA")
+
+entradas, lectura, evitar = [], [], []
+
+for _, r in df.iterrows():
+
+    ph, pa, goals, _, _ = genie_analysis(r.HomeTeam, r.AwayTeam, r.H, r.D, r.A)
+    label, _ = classify(ph, pa, goals, r.H)
+
+    match = f"{r.HomeTeam} vs {r.AwayTeam}"
+
+    if label == "🟢 ENTRADA":
+        entradas.append(match)
+    elif label == "🟡 LECTURA":
+        lectura.append(match)
+    else:
+        evitar.append(match)
+
+st.markdown("### 🟢 ENTRADA")
+for m in entradas[:5]:
+    st.write(m)
+
+st.markdown("### 🟡 LECTURA")
+for m in lectura[:5]:
+    st.write(m)
+
+st.markdown("### 🔴 EVITAR")
+for m in evitar[:5]:
+    st.write(m)
 
 # =========================================================
 # SELECTOR
 # =========================================================
-matches = df.apply(lambda r: f"{r.HomeTeam} vs {r.AwayTeam} | {r.Div}", axis=1)
+matches = df.apply(lambda r: f"{r.HomeTeam} vs {r.AwayTeam}", axis=1)
 
 selected = st.selectbox("Selecciona partido", matches)
 
@@ -103,35 +203,36 @@ row = df.iloc[list(matches).index(selected)]
 
 home, away = row.HomeTeam, row.AwayTeam
 
-# =========================================================
-# ANALISIS
-# =========================================================
-ph, pa, goals, xg_h, xg_a, goals_trend, scoring, tactics, strategy, confidence = genie_analysis(
-    home, away, row.H, row.D, row.A
-)
+ph, pa, goals, xg_h, xg_a = genie_analysis(home, away, row.H, row.D, row.A)
 
-dominance, tempo, execution = narrative_engine(home, away, ph, pa, goals, strategy)
+label, score = classify(ph, pa, goals, row.H)
+
+value = detect_value(home, away, ph, pa, row.H, row.A)
+
+strat = strategy_engine(home, ph, goals)
+
+dominance, tempo, execution = narrative(home, away, ph, pa, goals, strat)
 
 # =========================================================
 # DISPLAY
 # =========================================================
 st.header(f"{home} vs {away}")
 
-st.subheader("📊 xG")
+st.subheader("📊 Clasificación")
+st.write(f"{label} | Score {score}/9")
+
+st.subheader("📈 xG")
 st.write(f"{xg_h} vs {xg_a}")
 
-st.subheader("⚽ Goal Trend")
-st.write(goals_trend)
+st.subheader("💰 Value")
+st.write(value)
 
-st.subheader("🎯 Estrategia")
-st.write(strategy)
+st.subheader("🔥 Estrategia")
+st.write(strat)
 
 st.subheader("🧠 Lectura")
 st.write(dominance)
 st.write(tempo)
 
-st.subheader("📈 Ejecución")
+st.subheader("🎯 Ejecución")
 st.write(execution)
-
-st.subheader("⭐ Confidence")
-st.write(confidence)
