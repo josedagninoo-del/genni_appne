@@ -699,19 +699,19 @@ if "FIREBALL" in final_strategy["name"].upper():
 
 ---
 
-**⚠️ Execution Insight (CLAVE)**  
+** Execution Insight (CLAVE)**  
 This strategy depends on early attacking intent.  
 You are trading volatility and timing, not just probability.
 """)
 ---
 
-**⚠️ Execution Insight (CLAVE)**  
+** Execution Insight (CLAVE)**  
 No estás apostando resultados, estás explotando movimientos de mercado.  
 El edge viene del timing del gol y la reacción del precio.
 """)
 
 # =========================================================
-# 🎯 BLOQUE PRO — LAY THE DIP
+#  BLOQUE PRO — LAY THE DIP
 # =========================================================
 if "LAY THE DIP" in final_strategy["name"].upper():
 
@@ -720,19 +720,19 @@ if "LAY THE DIP" in final_strategy["name"].upper():
     st.markdown("""
 ** Strategy Summary:** If the early stages of the match are goalless, the price of Under 2.5 goals will dip, creating a prime moment to lay.  
 With a high likelihood of early goals, there’s solid value capturing these price swings.
-**📊 Market to Trade:** Lay Under 2.5 Goals  
-**🎯 Strategy Style:** Lay to Back  
-**⏱ Market Entry :**  Minute 10 → 50% stake  Minute 25 → remaining 50% if still 0-0  
-**🎯 Goal Target:** Aim to secure profit after 2 goals  
-**🚪 Market Exit:** Exit at minute 65 (max exposure)  
-**📈 Profit Exit Instructions:**- If first goal → close immediately if cashout is negative - If positive → let trade run for full potential  
-**🏦 Bankroll Management:** Use 3% of bankroll  
+** Market to Trade:** Lay Under 2.5 Goals  
+** Strategy Style:** Lay to Back  
+** Market Entry :**  Minute 10 → 50% stake  Minute 25 → remaining 50% if still 0-0  
+** Goal Target:** Aim to secure profit after 2 goals  
+** Market Exit:** Exit at minute 65 (max exposure)  
+** Profit Exit Instructions:**- If first goal → close immediately if cashout is negative - If positive → let trade run for full potential  
+** Bankroll Management:** Use 3% of bankroll  
 
-**⚠️ Execution Insight (CLAVE)**  
+** Execution Insight (CLAVE)**  
 This is a time-decay strategy.  
 You are exploiting price compression in the Under market before goals arrive.
 """)
-# 🔥 NUEVO BLOQUE 1
+#  NUEVO BLOQUE 1
 st.subheader("🧠 LECTURA PROFESIONAL DEL PARTIDO")
 st.markdown(f"""
 ### Contexto
@@ -742,7 +742,7 @@ st.markdown(f"""
 {tempo}
 """)
 
-# 🔥 NUEVO BLOQUE 3
+#  NUEVO BLOQUE 3
 st.subheader("🧠 RESUMEN PROFESIONAL AVANZADO")
 st.markdown(summary)
 
