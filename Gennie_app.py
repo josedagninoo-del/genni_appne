@@ -469,31 +469,36 @@ st.subheader("🚨 CONCLUSIÓN OPERATIVA")
 
 entradas, lectura, evitar = [], [], []
 
+# =========================================================
+# 🔥 RANKING DE PARTIDOS (AGREGADO)
+# =========================================================
+matches_ranked = []
+
 for _, r in df.iterrows():
     ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, r.H, r.D, r.A)
-    label, _ = classify_match(ph, pa, goals, r.H)
+    label, score = classify_match(ph, pa, goals, r.H)
 
-    match = f"{r.HomeTeam} vs {r.AwayTeam}"
+    matches_ranked.append({
+        "match": f"{r.HomeTeam} vs {r.AwayTeam}",
+        "label": label,
+        "score": score
+    })
 
-    if label == "🟢 ENTRADA":
-        entradas.append(match)
-    elif label == "🟡 LECTURA":
-        lectura.append(match)
+# 🔥 Ordenar por score DESC (mejores primero)
+matches_ranked = sorted(matches_ranked, key=lambda x: x["score"], reverse=True)
+
+# Reiniciar listas
+entradas, lectura, evitar = [], [], []
+
+# Clasificar ya ordenados
+for m in matches_ranked:
+
+    if m["label"] == "🟢 ENTRADA":
+        entradas.append(m["match"])
+    elif m["label"] == "🟡 LECTURA":
+        lectura.append(m["match"])
     else:
-        evitar.append(match)
-
-st.markdown("### 🟢 PARTIDOS PARA ENTRAR")
-for m in entradas[:5]:
-    st.write(m)
-
-st.markdown("### 🟡 PARTIDOS DE LECTURA")
-for m in lectura[:5]:
-    st.write(m)
-
-st.markdown("### 🔴 EVITAR")
-for m in evitar[:5]:
-    st.write(m)
-
+        evitar.append(m["match"])
 
 # =========================================================
 # 🎯 SELECTOR
