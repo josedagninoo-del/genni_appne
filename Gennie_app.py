@@ -691,11 +691,11 @@ if "FIREBALL" in final_strategy["name"].upper():
 
     st.markdown("""
 ** Strategy Summary:**We will exploit early market odd rise and the high probability of goals to back Over 2.5 goals, profiting from a price collapse immediately after a goal is scored.
-**📊 Market to Trade:** Over 2.5 Goals  
-**🎯 Strategy Style:**Back to Lay  
-**⏱ Market Entry Timing:**50% stake at minute 10 Remaining 50% at minute 25 if no goal  
-**🎯 Profit Target:**Aim for ~30% ROI after first goal, If still red → hold for second goal  
-**🏦 Bankroll Management:** Use 3% of bankroll  
+** Market to Trade:** Over 2.5 Goals  
+** Strategy Style:**Back to Lay  
+** Market Entry Timing:**50% stake at minute 10 Remaining 50% at minute 25 if no goal  
+** Profit Target:**Aim for ~30% ROI after first goal, If still red → hold for second goal  
+** Bankroll Management:** Use 3% of bankroll  
 
 ---
 
