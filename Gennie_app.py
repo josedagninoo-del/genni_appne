@@ -690,7 +690,7 @@ if "FIREBALL" in final_strategy["name"].upper():
     st.markdown("## 🔥 FIREBALL — PLAN PROFESIONAL")
 
     st.markdown("""
-**📌 Strategy Summary:**We will exploit early market odd rise and the high probability of goals to back Over 2.5 goals, profiting from a price collapse immediately after a goal is scored.
+** Strategy Summary:**We will exploit early market odd rise and the high probability of goals to back Over 2.5 goals, profiting from a price collapse immediately after a goal is scored.
 **📊 Market to Trade:** Over 2.5 Goals  
 **🎯 Strategy Style:**Back to Lay  
 **⏱ Market Entry Timing:**50% stake at minute 10 Remaining 50% at minute 25 if no goal  
@@ -718,7 +718,7 @@ if "LAY THE DIP" in final_strategy["name"].upper():
     st.markdown("## 🎯 LAY THE DIP — PLAN PROFESIONAL")
 
     st.markdown("""
-**📌 Strategy Summary:** If the early stages of the match are goalless, the price of Under 2.5 goals will dip, creating a prime moment to lay.  
+** Strategy Summary:** If the early stages of the match are goalless, the price of Under 2.5 goals will dip, creating a prime moment to lay.  
 With a high likelihood of early goals, there’s solid value capturing these price swings.
 **📊 Market to Trade:** Lay Under 2.5 Goals  
 **🎯 Strategy Style:** Lay to Back  
