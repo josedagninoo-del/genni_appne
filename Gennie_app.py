@@ -476,8 +476,7 @@ Cerrar en minuto 70 si sigue 0-0
             "entry": "-",
             "execution": "Skip"
         }
-            ph = 1 / row.PSH if row.PSH > 0 else 0
-            pa = 1 / row.PSA if row.PSA > 0 else 0
+
 # =========================================================
 # 🧠 SELECTOR REAL SIN JERARQUÍA
 # =========================================================
@@ -487,74 +486,42 @@ def select_best_strategy(home, away, ph, pa, goals, xg_h, xg_a):
 
     scores = {}
 
-    # =========================================================
-    # 🧠 GENIE GAMBIT 2.0 (equilibrio + goles)
-    # =========================================================
+    # 💣 GAMBIT
     scores["GENIE GAMBIT 2.0"] = (
-        (3 if 0.55 <= ph <= 0.68 else 0) +     # ❗ NO extremos
-        (3 if goals >= 2.7 else 0) +
-        (2 if abs(xg_h - xg_a) < 0.6 else 0)   # equilibrio ofensivo
+        (2 if ph >= 0.60 else 0) +
+        (2 if goals >= 2.7 else 0) +
+        (1 if xg_h > xg_a else 0)
     )
 
-    # =========================================================
-    # ⚡ MOMENTUM METHOD (favorito claro)
-    # =========================================================
+    # ⚡ MOMENTUM
     scores["MOMENTUM METHOD"] = (
-        (4 if ph >= 0.62 else 0) +             # 🔥 dominante
-        (2 if edge >= 0.15 else 0) +
-        (2 if xg_h > xg_a else 0)
+        (2 if ph >= 0.60 else 0) +
+        (2 if goals < 2.7 else 0) +
+        (1 if edge > 0.15 else 0)
     )
 
-    # =========================================================
-    # 💪 POWER PLAY (favorito + mercado combinado)
-    # =========================================================
+    # 💪 POWER PLAY
     scores["POWER PLAY"] = (
-        (3 if ph >= 0.58 else 0) +
+        (2 if ph >= 0.58 else 0) +
         (2 if 2.4 <= goals <= 2.8 else 0) +
-        (2 if edge >= 0.12 else 0)
+        (1 if edge > 0.10 else 0)
     )
 
-    # =========================================================
-    # 🔥 FIREBALL (caos + sin dominador)
-    # =========================================================
+    # 🔥 FIREBALL
     scores["FIREBALL"] = (
-        (3 if goals >= 2.8 else 0) +
-        (3 if 0.45 <= ph <= 0.60 else 0) +              # ❗ clave
-        (2 if edge < 0.12 else 0)
+        (2 if goals >= 2.8 else 0) +
+        (2 if 0.52 <= ph <= 0.60 else 0) +
+        (1 if edge < 0.15 else 0)
     )
 
-    # =========================================================
-    # 🎯 LAY THE DIP (over claro sin gol temprano)
-    # =========================================================
+    # 🎯 LAY THE DIP
     scores["LAY THE DIP"] = (
-        (3 if goals >= 2.8 else 0) +
-        (3 if edge < 0.10 else 0) +
-        (2 if ph < 0.58 else 0)
+        (2 if goals >= 2.8 else 0) +
+        (2 if edge < 0.12 else 0) +
+        (1 if ph < 0.60 else 0)
     )
 
-    # =========================================================
-    # 🧠 PENALIZACIONES (LA CLAVE DEL AJUSTE FINO)
-    # =========================================================
-
-    # ❌ NO Fireball si hay favorito fuerte
-    if ph > 0.62:
-        scores["FIREBALL"] -= 4
-
-    # ❌ NO Gambit si hay dominancia clara
-    if ph > 0.70:
-        scores["GENIE GAMBIT 2.0"] -= 5
-
-    # ❌ NO Lay si partido desequilibrado
-    if edge > 0.18:
-        scores["LAY THE DIP"] -= 3
-
-    # ❌ NO Momentum si partido muy equilibrado
-    if edge < 0.08:
-        scores["MOMENTUM METHOD"] -= 3
-
-    # =========================================================
-    # 🏆 SELECCIÓN FINAL
-    # =========================================================
+    # 🧠 elegir mejor
     best = max(scores, key=scores.get)
 
     return best
