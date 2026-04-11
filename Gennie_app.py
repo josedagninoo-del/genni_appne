@@ -32,7 +32,7 @@ params = {
 }
 
 res = requests.get(url, headers=headers, params=params, timeout=10)
-
+}
 rows = []
 for m in data.get("response", []):
     rows.append({
