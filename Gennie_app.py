@@ -30,11 +30,11 @@ def load_api_data():
         "to": tomorrow
         }
 
-res = requests.get(url, headers=headers, params=params, timeout=10)
+        res = requests.get(url, headers=headers, params=params, timeout=10)
 
-rows = []
-for m in data.get("response", []):
-    rows.append({
+        rows = []
+        for m in data.get("response", []):
+        rows.append({
         "fixture_id": m["fixture"]["id"],  # 🔥 NUEVO
         "HomeTeam": m["teams"]["home"]["name"],
         "AwayTeam": m["teams"]["away"]["name"],
