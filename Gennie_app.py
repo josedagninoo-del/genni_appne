@@ -620,7 +620,7 @@ entradas, lectura, evitar = [], [], []
 # =========================================================
 matches_ranked = []
 
-for _, r in df.iterrows():
+for index, r in df.iterrows():
     ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, r.H, r.D, r.A)
     label, score = classify_match(ph, pa, goals, r.H)
 
