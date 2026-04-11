@@ -105,39 +105,19 @@ def load_real_odds(fixture_id):
 
     except:
         return None
-# =========================================================
-# 📥 DATA (BASE)
-# =========================================================
+        
 @st.cache_data
 def load_data():
-    # 🔥 PRIORIDAD API
     df_api = load_api_data()
-    if df_api is not None:
+
+    if df_api is not None and not df_api.empty:
         return df_api
-def load_data():
+
+    # fallback SOLO si API falla
     url = "https://www.football-data.co.uk/fixtures.csv"
     df = pd.read_csv(url)
+    return df
 
-    df = df.dropna(subset=["HomeTeam", "AwayTeam"])
-    df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
-
-    today = datetime.today().date()
-    df["Date_only"] = df["Date"].dt.date
-  
-    df_future = df[df["Date_only"] == today]
-
-    if df_future.empty:
-        df_future = df.sort_values("Date").tail(40)
-
-    df_future["H"] = df_future["B365H"]
-    df_future["D"] = df_future["B365D"]
-    df_future["A"] = df_future["B365A"]
-
-    df_future = df_future.dropna(subset=["H", "D", "A"])
-
-    return df_future
-
-df = load_data()
 
 # =========================================================
 # 🧠 ENGINE BASE (NO TOCAR)
