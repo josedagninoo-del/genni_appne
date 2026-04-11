@@ -20,9 +20,15 @@ def load_api_data():
             "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
         }
 
+        from datetime import timedelta
+
+        today = datetime.today()
+        tomorrow = today + timedelta(days=2)
+
         params = {
-            "date": datetime.today().strftime("%Y-%m-%d")
-        }
+        "from": today.strftime("%Y-%m-%d"),
+       "to": tomorrow.strftime("%Y-%m-%d")
+       }
 
         res = requests.get(url, headers=headers, params=params, timeout=10)
 
@@ -31,6 +37,8 @@ def load_api_data():
 
         data = res.json()
 
+        st.write("API RESPONSE:", len(data.get("response", [])))
+        
         rows = []
         for m in data.get("response", []):
             rows.append({
