@@ -110,8 +110,10 @@ def load_data():
     df = df.dropna(subset=["HomeTeam", "AwayTeam"])
     df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
 
-    today = datetime.today()
-    df_future = df[df["Date"] >= today]
+    today = datetime.today().date()
+df["Date_only"] = df["Date"].dt.date
+
+df_future = df[df["Date_only"] == today]
 
     if df_future.empty:
         df_future = df.sort_values("Date").tail(40)
