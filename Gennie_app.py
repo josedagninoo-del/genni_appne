@@ -409,19 +409,31 @@ Minuto 65
 Partido sin ritmo ofensivo real
 """
         }
+# =========================================================
+# ⚡ THE MOMENTUM METHOD (PRO)
+# =========================================================
+elif ph >= 0.60 and goals < 2.7:
 
-    # =========================================================
-    # ⚡ MOMENTUM (FAVORITO CLARO PERO NO GOLEADA ESPERADA)
-    # =========================================================
-    elif ph >= 0.65 and goals < 2.7:
-        return {
-            "name": "MOMENTUM BACK",
-            "criteria": "Favorito dominante en partido controlado",
-            "description": "Entrar antes del gol",
-            "entry": "Min 5-15",
-            "execution": "Back favorito"
-        }
+    return {
+        "name": "MOMENTUM METHOD",
+        "criteria": "Favorito con alta probabilidad de dominar sin necesidad de partido abierto",
+        "description": "Aprovecha la probabilidad de que el favorito marque primero y capture la caída de cuota tras el gol.",
+        "entry": "Min 15 tras confirmar dominio",
+        "execution": """
+1. Esperar ~15 minutos para evaluar ritmo  
+2. Confirmar dominio (posesión, presión, control)  
+3. Back al favorito  
 
+🎯 Objetivo:
+Capturar caída de cuota tras el primer gol  
+
+📈 Salida:
+Cerrar inmediatamente tras gol del favorito (Lay)  
+
+⚠ Contingencia:
+Si el underdog marca primero → salir para proteger capital  
+"""
+    }
     # =========================================================
     # 🔥 GOALS FLOW (SOLO SI NO HAY EDGE CLARO)
     # =========================================================
@@ -740,6 +752,27 @@ st.markdown(f"""
 {tempo}
 """)
 
+# =========================================================
+# ⚡ BLOQUE PRO — MOMENTUM METHOD
+# =========================================================
+if "MOMENTUM" in final_strategy["name"].upper():
+
+    st.markdown("## ⚡ THE MOMENTUM METHOD — PLAN PROFESIONAL")
+
+    st.markdown("""
+**📌 Strategy Summary:**We take advantage of the high probability of the favorite taking the lead and profit from the price collapse after they score.
+**📊 Market to Trade:** Match Odds  
+**🎯 Strategy Style:**Back to Lay  
+**🎯 Team to Back:** The favorite  
+**⏱ Market Entry Timing:**Around minute 15 after confirming early dominance  
+**🚪 Profit Exit Strategy:** Once the favorite scores → Lay immediately to lock profit  
+**⚠ Contingency Strategy:**If the underdog scores first → exit the trade to protect capital  
+**🏦 Bankroll Management:** Use 2% of bankroll  
+
+**⚠️ Execution Insight (CLAVE)**  
+This is a momentum-based strategy.  
+You are trading dominance and timing, not just probability.
+""")
 # 🔥 NUEVO BLOQUE 3
 st.subheader("🧠 RESUMEN PROFESIONAL AVANZADO")
 st.markdown(summary)
