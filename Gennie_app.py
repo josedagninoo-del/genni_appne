@@ -712,10 +712,6 @@ strategy_data = build_strategy(best_strategy_name)
 # =========================================================
 final_strategy = strategy_data
 
-# Si el motor base sugiere LAY THE DIP pero el modelo pro no coincide
-
-    final_strategy = strategy_data
-
 # =========================================================
 # 📊 GENERAR TENDENCIAS (AGREGADO)
 # =========================================================
