@@ -40,16 +40,15 @@ def load_api_data():
             "HomeTeam": m["teams"]["home"]["name"],
             "AwayTeam": m["teams"]["away"]["name"],
             "Div": m["league"]["name"],
-            "Date": m["fixture"]["date"][:10],
+            "Date": m["fixture"]["date"],
             "H": 2.2,
             "D": 3.2,
             "A": 3.0
         })
 
         df_api = pd.DataFrame(rows)
-        from datetime import datetime, timedelta
-
-        df_api["DateTime"] = pd.to_datetime(df_api["Date"], errors="coerce")
+        
+        df_api["DateTime"] = pd.to_datetime(df_api["Date"], utc=True)
 
         now = datetime.utcnow()
 
