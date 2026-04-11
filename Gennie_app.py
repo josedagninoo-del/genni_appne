@@ -34,16 +34,16 @@ def load_api_data():
 
         rows = []
         for m in data.get("response", []):
-        rows.append({
-        "fixture_id": m["fixture"]["id"],  # 🔥 NUEVO
-        "HomeTeam": m["teams"]["home"]["name"],
-        "AwayTeam": m["teams"]["away"]["name"],
-        "Div": m["league"]["name"],
-        "Date": m["fixture"]["date"][:10],
-        "H": 2.2,
-        "D": 3.2,
-        "A": 3.0
-    })
+            rows.append({
+            "fixture_id": m["fixture"]["id"],  # 🔥 NUEVO
+            "HomeTeam": m["teams"]["home"]["name"],
+            "AwayTeam": m["teams"]["away"]["name"],
+            "Div": m["league"]["name"],
+            "Date": m["fixture"]["date"][:10],
+            "H": 2.2,
+            "D": 3.2,
+            "A": 3.0
+        })
 
         df_api = pd.DataFrame(rows)
 
