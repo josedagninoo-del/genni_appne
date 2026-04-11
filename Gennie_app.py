@@ -113,6 +113,8 @@ def load_data():
     if df_api is not None and not df_api.empty:
         return df_api
 
+    return pd.DataFrame()  # 🔥 nunca None
+
     # fallback SOLO si API falla
     url = "https://www.football-data.co.uk/fixtures.csv"
     df = pd.read_csv(url)
