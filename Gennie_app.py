@@ -20,30 +20,28 @@ def load_api_data():
             "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
         }
 
-       from datetime import timedelta
-
-        today = datetime.utcnow().strftime("%Y-%m-%d")
-        tomorrow = (datetime.utcnow() + timedelta(days=1)).strftime("%Y-%m-%d")
-
         params = {
-        "from": today,
-        "to": tomorrow
+            "date": datetime.today().strftime("%Y-%m-%d")
         }
 
         res = requests.get(url, headers=headers, params=params, timeout=10)
 
+        if res.status_code != 200:
+            return None
+
+        data = res.json()
+
         rows = []
         for m in data.get("response", []):
-        rows.append({
-        "fixture_id": m["fixture"]["id"],  # 🔥 NUEVO
-        "HomeTeam": m["teams"]["home"]["name"],
-        "AwayTeam": m["teams"]["away"]["name"],
-        "Div": m["league"]["name"],
-        "Date": m["fixture"]["date"][:10],
-        "H": 2.2,
-        "D": 3.2,
-        "A": 3.0
-        })
+            rows.append({
+                "HomeTeam": m["teams"]["home"]["name"],
+                "AwayTeam": m["teams"]["away"]["name"],
+                "Div": m["league"]["name"],
+                "Date": m["fixture"]["date"][:10],
+                "H": 2.2,
+                "D": 3.2,
+                "A": 3.0
+            })
 
         df_api = pd.DataFrame(rows)
 
