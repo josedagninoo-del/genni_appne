@@ -28,11 +28,12 @@ def load_api_data():
         params = {
         "from": today,
         "to": tomorrow,
-        "season": 2026,
         "timezone": "America/Mexico_City"
         }
         res = requests.get(url, headers=headers, params=params, timeout=10)
-
+        
+        data = res.json()
+        print(len(data.get("response", [])))
         rows = []
         for m in data.get("response", []):
             rows.append({
