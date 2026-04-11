@@ -412,14 +412,14 @@ Partido sin ritmo ofensivo real
 # =========================================================
 # ⚡ THE MOMENTUM METHOD (PRO)
 # =========================================================
-elif ph >= 0.60 and goals < 2.7:
+    elif ph >= 0.60 and goals < 2.7:
 
-    return {
-        "name": "MOMENTUM METHOD",
-        "criteria": "Favorito con alta probabilidad de dominar sin necesidad de partido abierto",
-        "description": "Aprovecha la probabilidad de que el favorito marque primero y capture la caída de cuota tras el gol.",
-        "entry": "Min 15 tras confirmar dominio",
-        "execution": """
+        return {
+          "name": "MOMENTUM METHOD",
+          "criteria": "Favorito con alta probabilidad de dominar sin necesidad de partido abierto",
+          "description": "Aprovecha la probabilidad de que el favorito marque primero y capture la caída de cuota tras el gol.",
+          "entry": "Min 15 tras confirmar dominio",
+          "execution": """
 1. Esperar ~15 minutos para evaluar ritmo  
 2. Confirmar dominio (posesión, presión, control)  
 3. Back al favorito  
