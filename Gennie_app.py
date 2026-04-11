@@ -48,7 +48,7 @@ params = {
                 "H": 2.2,
                 "D": 3.2,
                 "A": 3.0
-                })
+                }})
 
         df_api = pd.DataFrame(rows)
 
