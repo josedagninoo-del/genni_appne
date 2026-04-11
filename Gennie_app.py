@@ -26,8 +26,7 @@ def load_api_data():
         tomorrow = (datetime.utcnow() + timedelta(days=1)).strftime("%Y-%m-%d")
 
         params = {
-        "from": today,
-        "to": tomorrow,
+        "date": today,
         "timezone": "America/Mexico_City"
         }
         res = requests.get(url, headers=headers, params=params, timeout=10)
@@ -48,7 +47,16 @@ def load_api_data():
         })
 
         df_api = pd.DataFrame(rows)
+        from datetime import datetime, timedelta
 
+        df_api["DateTime"] = pd.to_datetime(df_api["Date"], errors="coerce")
+
+        now = datetime.utcnow()
+
+        df_api = df_api[
+        (df_api["DateTime"] >= now - timedelta(hours=6)) &
+        (df_api["DateTime"] <= now + timedelta(hours=36))
+        ]
         if not df_api.empty:
             df_api["Date"] = pd.to_datetime(df_api["Date"])
             st.success("✅ API PRO activa")
