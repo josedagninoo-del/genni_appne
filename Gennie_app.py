@@ -44,7 +44,7 @@ def load_api_data():
                 "A": 3.0
             })
             
-         df_api = pd.DataFrame(rows)
+            df_api = pd.DataFrame(rows)
 
         if not df_api.empty:
             import pytz
