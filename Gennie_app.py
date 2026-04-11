@@ -112,7 +112,8 @@ def load_data():
 
     today = datetime.today().date()
 df["Date_only"] = df["Date"].dt.date
-
+    if df_future.empty:
+    df_future = df[df["Date_only"] >= today].sort_values("Date").head(20)
 df_future = df[df["Date_only"] == today]
 
     if df_future.empty:
