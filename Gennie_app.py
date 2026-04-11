@@ -27,9 +27,10 @@ def load_api_data():
 
         params = {
         "from": today,
-        "to": tomorrow
+        "to": tomorrow,
+        "season": 2026,
+        "timezone": "America/Mexico_City"
         }
-
         res = requests.get(url, headers=headers, params=params, timeout=10)
 
         rows = []
