@@ -37,33 +37,18 @@ def load_api_data():
                 "HomeTeam": m["teams"]["home"]["name"],
                 "AwayTeam": m["teams"]["away"]["name"],
                 "Div": m["league"]["name"],
-                "Date": m["fixture"]["date"],
-                "Status": m["fixture"]["status"]["short"],
+                "Date": m["fixture"]["date"][:10],
                 "H": 2.2,
                 "D": 3.2,
                 "A": 3.0
             })
-            
-            df_api = pd.DataFrame(rows)
+
+        df_api = pd.DataFrame(rows)
 
         if not df_api.empty:
-            import pytz
-
-            df_api["Date"] = pd.to_datetime(df_api["Date"], utc=True)
-            df_api["LocalTime"] = df_api["Date"].dt.tz_convert("America/Mexico_City")
-
-            df_api["Date_only"] = df_api["LocalTime"].dt.date
-            df_api["Time_only"] = df_api["LocalTime"].dt.time
-
-            today = datetime.now(pytz.timezone("America/Mexico_City")).date()
-
-            df_today = df_api[df_api["Date_only"] == today]
-
-            # 🔥 eliminar finalizados
-            df_today = df_today[~df_today["Status"].isin(["FT", "AET", "PEN"])]
-
+            df_api["Date"] = pd.to_datetime(df_api["Date"])
             st.success("✅ API PRO activa")
-            return df_today
+            return df_api
 
     except:
         return None
@@ -743,8 +728,7 @@ st.header(f"{home} vs {away}")
 st.subheader("💰 Odds actuales")
 st.write(f"Home: {row.H} | Draw: {row.D} | Away: {row.A}")
 st.write(f"🌍 {row.Div}")
-st.write(f"📅 {row.LocalTime.strftime('%d/%m/%Y %H:%M')}")
-st.write(f"📡 Estado: {row.Status}")
+st.write(f"📅 {row.Date.strftime('%d/%m/%Y')}")
 
 st.subheader("📊 Clasificación")
 st.write(f"{label} | Score {score}/9")
