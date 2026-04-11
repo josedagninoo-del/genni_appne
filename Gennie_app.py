@@ -434,17 +434,34 @@ Cerrar inmediatamente tras gol del favorito (Lay)
 Si el underdog marca primero → salir para proteger capital  
 """
     }
+
     # =========================================================
-    # 🔥 GOALS FLOW (SOLO SI NO HAY EDGE CLARO)
-    # =========================================================
-    elif goals >= 2.6 and edge < 0.18:
+# 💪 POWER PLAY STRATEGY (DOBLE MERCADO)
+# =========================================================
+    elif ph >= 0.58 and 2.4 <= goals <= 2.8:
+
         return {
-            "name": "GOALS FLOW",
-            "criteria": "Partido abierto pero sin dominador",
-            "description": "Flujo de goles sin estructura clara",
-            "entry": "Min 15-25",
-            "execution": "Over / BTTS"
-        }
+          "name": "POWER PLAY",
+          "criteria": "Favorito claro + partido controlado con potencial de desbloqueo",
+          "description": "Estrategia combinada que explota el movimiento del empate y la ventaja del favorito tras el primer gol.",
+          "entry": "Kick-off (entrada temprana)",
+          "execution": """
+1. Back al favorito con 50% del stake  
+2. Lay al empate con el 50% restante  
+
+🎯 Objetivo:
+Capturar drift del empate y caída del favorito tras gol  
+
+📈 Escenario ideal:
+El favorito marca → mantener posición hasta posible segundo gol (10-20 min)  
+
+⚠ Contingencia:
+Si el underdog marca → salir inmediatamente para limitar pérdidas  
+
+⏱ Salida máxima:
+Cerrar en minuto 70 si sigue 0-0  
+"""
+    }
 
     # =========================================================
     # 🧊 NO TRADE
@@ -772,6 +789,29 @@ if "MOMENTUM" in final_strategy["name"].upper():
 **⚠️ Execution Insight (CLAVE)**  
 This is a momentum-based strategy.  
 You are trading dominance and timing, not just probability.
+""")
+
+# =========================================================
+# 💪 BLOQUE PRO — POWER PLAY
+# =========================================================
+if "POWER PLAY" in final_strategy["name"].upper():
+
+    st.markdown("## 💪 POWER PLAY STRATEGY — PLAN PROFESIONAL")
+
+    st.markdown("""
+**📌 Strategy Summary:**We’ll seize the opportunity by backing our favorite and laying the draw to capitalize on the anticipated drift in the draw price once a goal is scored.
+**📊 Market to Trade:** Match Odds  Lay the Draw - Back the Favorite  
+**🎯 Strategy Style:** Lay to Back + Back to Lay combo  
+**🎯 Team to Favor:** Favorite  
+**💰 Staking Plan:**50% stake → Back favorite 50% stake → Lay the draw  
+**⏱ Market Entry Timing:** Kick-off (early entry for optimal pricing)  
+**📈 Favorite Scores Scenario:**Hold position up to 10–20 minutes Look for second goal gap Then secure profit  
+**⚠ Underdog Scores Scenario:** Exit immediately to protect capital  
+**⏱ Optimal Exit Timing:** Close around minute 70 if match remains 0-0  
+
+**⚠️ Execution Insight (CLAVE)**  
+This is a dual-pressure strategy exploiting both draw decay and favorite dominance.  
+You are trading structure, not just momentum.
 """)
 # 🔥 NUEVO BLOQUE 3
 st.subheader("🧠 RESUMEN PROFESIONAL AVANZADO")
