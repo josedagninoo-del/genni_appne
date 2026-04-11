@@ -21,8 +21,15 @@ def load_api_data():
         }
 
         params = {
-            "date": datetime.today().strftime("%Y-%m-%d")
-        }
+        from datetime import timedelta
+
+today = datetime.utcnow().strftime("%Y-%m-%d")
+tomorrow = (datetime.utcnow() + timedelta(days=1)).strftime("%Y-%m-%d")
+
+params = {
+    "from": today,
+    "to": tomorrow
+}   
 
         res = requests.get(url, headers=headers, params=params, timeout=10)
 
