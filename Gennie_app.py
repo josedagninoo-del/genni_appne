@@ -733,7 +733,11 @@ ph, pa, goals, xg_h, xg_a, goals_trend, scoring, tactics, strategy, market, entr
 label, score = classify_match(ph, pa, goals, row.H)
 
 context, tempo, execution = narrative_engine(home, away, ph, pa, goals, xg_h, xg_a, strategy)
-
+print("DEBUG:")
+print("ph:", ph)
+print("pa:", pa)
+print("goals:", goals)
+print("edge:", abs(ph - pa))
 # =========================================================
 # 🧠 SELECCIÓN REAL SIN JERARQUÍA
 # =========================================================
