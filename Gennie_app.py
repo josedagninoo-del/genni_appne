@@ -473,7 +473,89 @@ Cerrar en minuto 70 si sigue 0-0
             "description": "No hay edge",
             "entry": "-",
             "execution": "Skip"
-        }# =========================================================
+        }
+
+# =========================================================
+# 🧠 STRATEGY SELECTOR (SIN JERARQUÍA)
+# =========================================================
+def select_best_strategy(home, away, ph, pa, goals, xg_h, xg_a):
+
+    edge = abs(ph - pa)
+
+    strategies = []
+
+    # =============================
+    # 💣 GAMBIT
+    # =============================
+    score = 0
+    if ph >= 0.60:
+        score += 2
+    if goals >= 2.7:
+        score += 2
+    if xg_h > xg_a:
+        score += 1
+
+    strategies.append(("GENIE GAMBIT 2.0", score))
+
+    # =============================
+    # ⚡ MOMENTUM
+    # =============================
+    score = 0
+    if ph >= 0.60:
+        score += 2
+    if goals < 2.7:
+        score += 2
+    if edge > 0.15:
+        score += 1
+
+    strategies.append(("MOMENTUM METHOD", score))
+
+    # =============================
+    # 💪 POWER PLAY
+    # =============================
+    score = 0
+    if ph >= 0.58:
+        score += 2
+    if 2.4 <= goals <= 2.8:
+        score += 2
+    if edge > 0.10:
+        score += 1
+
+    strategies.append(("POWER PLAY", score))
+
+    # =============================
+    # 🔥 FIREBALL
+    # =============================
+    score = 0
+    if goals >= 2.8:
+        score += 2
+    if 0.52 <= ph <= 0.60:
+        score += 2
+    if edge < 0.15:
+        score += 1
+
+    strategies.append(("FIREBALL", score))
+
+    # =============================
+    # 🎯 LAY THE DIP
+    # =============================
+    score = 0
+    if goals >= 2.8:
+        score += 2
+    if edge < 0.12:
+        score += 2
+    if ph < 0.60:
+        score += 1
+
+    strategies.append(("LAY THE DIP", score))
+
+    # =============================
+    # 🧠 SELECCIÓN FINAL
+    # =============================
+    best = max(strategies, key=lambda x: x[1])
+
+    return best[0]
+# =========================================================
 # 🧠 CLASIFICACIÓN (BASE)
 # =========================================================
 def classify_match(ph, pa, goals, h):
@@ -599,7 +681,14 @@ context, tempo, execution = narrative_engine(home, away, ph, pa, goals, xg_h, xg
 # 🎯 GENERAR ESTRATEGIA PRO
 # =========================================================
 strategy_data = strategy_engine(home, away, ph, pa, goals, xg_h, xg_a)
+# =========================================================
+# 🧠 SELECCIÓN SIN JERARQUÍA
+# =========================================================
+best_strategy_name = select_best_strategy(home, away, ph, pa, goals, xg_h, xg_a)
 
+# Forzar que el sistema use la mejor estrategia
+if best_strategy_name != strategy_data["name"]:
+    strategy_data["name"] = best_strategy_name
 # =========================================================
 # 🔧 FIX CONSISTENCIA DE ESTRATEGIA (AGREGADO)
 # =========================================================
