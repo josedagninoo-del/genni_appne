@@ -20,14 +20,8 @@ def load_api_data():
             "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
         }
 
-        from datetime import timedelta
-
-        today = datetime.today()
-        tomorrow = today + timedelta(days=2)
-
         params = {
-        "from": today.strftime("%Y-%m-%d"),
-        "to": tomorrow.strftime("%Y-%m-%d")
+            "date": datetime.today().strftime("%Y-%m-%d")
         }
 
         res = requests.get(url, headers=headers, params=params, timeout=10)
@@ -37,12 +31,9 @@ def load_api_data():
 
         data = res.json()
 
-        st.write("API RESPONSE:", len(data.get("response", [])))
-        
         rows = []
         for m in data.get("response", []):
             rows.append({
-                "fixture_id": m["fixture"]["id"],
                 "HomeTeam": m["teams"]["home"]["name"],
                 "AwayTeam": m["teams"]["away"]["name"],
                 "Div": m["league"]["name"],
@@ -51,8 +42,7 @@ def load_api_data():
                 "D": 3.2,
                 "A": 3.0
             })
-        if not rows:
-           return None
+
         df_api = pd.DataFrame(rows)
 
         if not df_api.empty:
@@ -109,16 +99,35 @@ def load_real_odds(fixture_id):
 # =========================================================
 @st.cache_data
 def load_data():
+    # 🔥 PRIORIDAD API
     df_api = load_api_data()
-
-    if df_api is not None and not df_api.empty:
+    if df_api is not None:
         return df_api
+def load_data():
+    url = "https://www.football-data.co.uk/fixtures.csv"
+    df = pd.read_csv(url)
 
-    return pd.DataFrame()
+    df = df.dropna(subset=["HomeTeam", "AwayTeam"])
+    df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
+
+    today = datetime.today().date()
+    df["Date_only"] = df["Date"].dt.date
+  
+    df_future = df[df["Date_only"] == today]
+
+    if df_future.empty:
+        df_future = df.sort_values("Date").tail(40)
+
+    df_future["H"] = df_future["B365H"]
+    df_future["D"] = df_future["B365D"]
+    df_future["A"] = df_future["B365A"]
+
+    df_future = df_future.dropna(subset=["H", "D", "A"])
+
+    return df_future
+
 df = load_data()
-if df is None or df.empty:
-    st.error("No hay partidos disponibles desde la API")
-    st.stop()
+
 # =========================================================
 # 🧠 ENGINE BASE (NO TOCAR)
 # =========================================================
