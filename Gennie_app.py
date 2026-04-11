@@ -44,26 +44,26 @@ def load_api_data():
                 "A": 3.0
             })
 
-        df_api = pd.DataFrame(rows)
-        import pytz
-
-        df_api["Date"] = pd.to_datetime(df_api["Date"], utc=True)
-        df_api["LocalTime"] = df_api["Date"].dt.tz_convert("America/Mexico_City")
-
-        df_api["Date_only"] = df_api["LocalTime"].dt.date
-        df_api["Time_only"] = df_api["LocalTime"].dt.time
+               df_api = pd.DataFrame(rows)
 
         if not df_api.empty:
-            df_api["Date"] = pd.to_datetime(df_api["Date"])
-            st.success("✅ API PRO activa")
+            import pytz
+
+            df_api["Date"] = pd.to_datetime(df_api["Date"], utc=True)
+            df_api["LocalTime"] = df_api["Date"].dt.tz_convert("America/Mexico_City")
+
+            df_api["Date_only"] = df_api["LocalTime"].dt.date
+            df_api["Time_only"] = df_api["LocalTime"].dt.time
+
             today = datetime.now(pytz.timezone("America/Mexico_City")).date()
 
             df_today = df_api[df_api["Date_only"] == today]
 
-           # 🔥 eliminar finalizados
-           df_today = df_today[~df_today["Status"].isin(["FT", "AET", "PEN"])]
+            # 🔥 eliminar finalizados
+            df_today = df_today[~df_today["Status"].isin(["FT", "AET", "PEN"])]
 
-           return df_today
+            st.success("✅ API PRO activa")
+            return df_today
 
     except:
         return None
