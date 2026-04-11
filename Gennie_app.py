@@ -45,13 +45,13 @@ def load_api_data():
             })
 
         df_api = pd.DataFrame(rows)
-import pytz
+        import pytz
 
-df_api["Date"] = pd.to_datetime(df_api["Date"], utc=True)
-df_api["LocalTime"] = df_api["Date"].dt.tz_convert("America/Mexico_City")
+        df_api["Date"] = pd.to_datetime(df_api["Date"], utc=True)
+        df_api["LocalTime"] = df_api["Date"].dt.tz_convert("America/Mexico_City")
 
-df_api["Date_only"] = df_api["LocalTime"].dt.date
-df_api["Time_only"] = df_api["LocalTime"].dt.time
+        df_api["Date_only"] = df_api["LocalTime"].dt.date
+        df_api["Time_only"] = df_api["LocalTime"].dt.time
 
         if not df_api.empty:
             df_api["Date"] = pd.to_datetime(df_api["Date"])
