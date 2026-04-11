@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+import requests
+from datetime import datetime, timedelta   
 
 st.set_page_config(layout="wide")
 st.title("🔥 GENIE PRO REAL — ELITE")
@@ -20,9 +21,7 @@ def load_api_data():
             "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
         }
 
-        params = {
-        from datetime import timedelta
-
+             
         today = datetime.utcnow().strftime("%Y-%m-%d")
         tomorrow = (datetime.utcnow() + timedelta(days=1)).strftime("%Y-%m-%d")
 
