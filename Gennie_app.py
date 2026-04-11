@@ -409,9 +409,9 @@ Minuto 65
 Partido sin ritmo ofensivo real
 """
         }
-# =========================================================
-# ⚡ THE MOMENTUM METHOD (PRO)
-# =========================================================
+    # =========================================================
+    # ⚡ THE MOMENTUM METHOD (PRO)
+    # =========================================================
     elif ph >= 0.60 and goals < 2.7:
 
         return {
@@ -436,8 +436,8 @@ Si el underdog marca primero → salir para proteger capital
     }
 
     # =========================================================
-# 💪 POWER PLAY STRATEGY (DOBLE MERCADO)
-# =========================================================
+    # 💪 POWER PLAY STRATEGY (DOBLE MERCADO)
+    # =========================================================
     elif ph >= 0.58 and 2.4 <= goals <= 2.8:
 
         return {
@@ -473,7 +473,112 @@ Cerrar en minuto 70 si sigue 0-0
             "description": "No hay edge",
             "entry": "-",
             "execution": "Skip"
-        }# =========================================================
+        }
+
+# =========================================================
+# 🧠 SELECTOR REAL SIN JERARQUÍA
+# =========================================================
+def select_best_strategy(home, away, ph, pa, goals, xg_h, xg_a):
+
+    edge = abs(ph - pa)
+
+    scores = {}
+
+    # 💣 GAMBIT
+    scores["GENIE GAMBIT 2.0"] = (
+        (2 if ph >= 0.60 else 0) +
+        (2 if goals >= 2.7 else 0) +
+        (1 if xg_h > xg_a else 0)
+    )
+
+    # ⚡ MOMENTUM
+    scores["MOMENTUM METHOD"] = (
+        (2 if ph >= 0.60 else 0) +
+        (2 if goals < 2.7 else 0) +
+        (1 if edge > 0.15 else 0)
+    )
+
+    # 💪 POWER PLAY
+    scores["POWER PLAY"] = (
+        (2 if ph >= 0.58 else 0) +
+        (2 if 2.4 <= goals <= 2.8 else 0) +
+        (1 if edge > 0.10 else 0)
+    )
+
+    # 🔥 FIREBALL
+    scores["FIREBALL"] = (
+        (2 if goals >= 2.8 else 0) +
+        (2 if 0.52 <= ph <= 0.60 else 0) +
+        (1 if edge < 0.15 else 0)
+    )
+
+    # 🎯 LAY THE DIP
+    scores["LAY THE DIP"] = (
+        (2 if goals >= 2.8 else 0) +
+        (2 if edge < 0.12 else 0) +
+        (1 if ph < 0.60 else 0)
+    )
+
+    # 🧠 elegir mejor
+    best = max(scores, key=scores.get)
+
+    return best
+
+# =========================================================
+# 🧠 CONSTRUCTOR DE ESTRATEGIA
+# =========================================================
+def build_strategy(name):
+
+    strategies = {
+        "GENIE GAMBIT 2.0": {
+            "name": name,
+            "criteria": "Favorito fuerte + partido abierto",
+            "description": "Explota dominio + goles (doble mercado)",
+            "entry": "Pre-match + Over 2.5 ≥ 2.0",
+            "execution": "Back favorito + Back Over 2.5"
+        },
+
+        "MOMENTUM METHOD": {
+            "name": name,
+            "criteria": "Favorito dominante",
+            "description": "Explota gol del favorito",
+            "entry": "Min 15",
+            "execution": "Back favorito → Lay tras gol"
+        },
+
+        "POWER PLAY": {
+            "name": name,
+            "criteria": "Favorito + empate con valor",
+            "description": "Explota drift del empate",
+            "entry": "Kick-off",
+            "execution": "Back favorito + Lay empate"
+        },
+
+        "FIREBALL": {
+            "name": name,
+            "criteria": "Partido abierto sin dominador",
+            "description": "Explota gol temprano",
+            "entry": "Min 10 / 25",
+            "execution": "Back Over 2.5"
+        },
+
+        "LAY THE DIP": {
+            "name": name,
+            "criteria": "Partido abierto sin gol temprano",
+            "description": "Explota caída del Under",
+            "entry": "Min 10 / 25",
+            "execution": "Lay Under 2.5"
+        }
+    }
+
+    return strategies.get(name, {
+        "name": "NO TRADE",
+        "criteria": "Sin condiciones claras",
+        "description": "No hay edge",
+        "entry": "-",
+        "execution": "-"
+    })
+# =========================================================
 # 🧠 CLASIFICACIÓN (BASE)
 # =========================================================
 def classify_match(ph, pa, goals, h):
@@ -596,9 +701,11 @@ label, score = classify_match(ph, pa, goals, row.H)
 context, tempo, execution = narrative_engine(home, away, ph, pa, goals, xg_h, xg_a, strategy)
 
 # =========================================================
-# 🎯 GENERAR ESTRATEGIA PRO
+# 🧠 SELECCIÓN REAL SIN JERARQUÍA
 # =========================================================
-strategy_data = strategy_engine(home, away, ph, pa, goals, xg_h, xg_a)
+best_strategy_name = select_best_strategy(home, away, ph, pa, goals, xg_h, xg_a)
+
+strategy_data = build_strategy(best_strategy_name)
 
 # =========================================================
 # 🔧 FIX CONSISTENCIA DE ESTRATEGIA (AGREGADO)
@@ -606,30 +713,7 @@ strategy_data = strategy_engine(home, away, ph, pa, goals, xg_h, xg_a)
 final_strategy = strategy_data
 
 # Si el motor base sugiere LAY THE DIP pero el modelo pro no coincide
-# =========================================================
-# 🔧 FIX CONSISTENCIA (MEJORADO)
-# =========================================================
-if strategy_data is None:
-    final_strategy = {
-        "name": "NO TRADE",
-        "criteria": "Error en estrategia",
-        "description": "No se pudo generar estrategia",
-        "entry": "-",
-        "execution": "Revisar modelo"
-    }
 
-elif "LAY THE DIP" in strategy and strategy_data["name"] == "NO TRADE":
-    final_strategy = {
-        "name": "LAY THE DIP",
-        "criteria": "Alta expectativa de gol temprano",
-        "description": "Mercado sobreajusta el Under sin gol temprano",
-        "entry": entry,
-        "execution": f"""
-Entrada: {entry}
-Salida: {exit}
-"""
-    }
-else:
     final_strategy = strategy_data
 
 # =========================================================
