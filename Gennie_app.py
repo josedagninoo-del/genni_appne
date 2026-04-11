@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
-import requests
-from datetime import datetime, timedelta   
+from datetime import datetime
 
 st.set_page_config(layout="wide")
 st.title("🔥 GENIE PRO REAL — ELITE")
@@ -21,41 +20,31 @@ def load_api_data():
             "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
         }
 
-             
-        today = datetime.utcnow().strftime("%Y-%m-%d")
-        tomorrow = (datetime.utcnow() + timedelta(days=1)).strftime("%Y-%m-%d")
-
         params = {
-        "date": today,
-        "timezone": "America/Mexico_City"
+            "date": datetime.today().strftime("%Y-%m-%d")
         }
+
         res = requests.get(url, headers=headers, params=params, timeout=10)
-        
+
+        if res.status_code != 200:
+            return None
+
         data = res.json()
-        print(len(data.get("response", [])))
+
         rows = []
         for m in data.get("response", []):
             rows.append({
-            "fixture_id": m["fixture"]["id"],  # 🔥 NUEVO
-            "HomeTeam": m["teams"]["home"]["name"],
-            "AwayTeam": m["teams"]["away"]["name"],
-            "Div": m["league"]["name"],
-            "Date": m["fixture"]["date"],
-            "H": 2.2,
-            "D": 3.2,
-            "A": 3.0
-        })
+                "HomeTeam": m["teams"]["home"]["name"],
+                "AwayTeam": m["teams"]["away"]["name"],
+                "Div": m["league"]["name"],
+                "Date": m["fixture"]["date"][:10],
+                "H": 2.2,
+                "D": 3.2,
+                "A": 3.0
+            })
 
         df_api = pd.DataFrame(rows)
-        
-        df_api["DateTime"] = pd.to_datetime(df_api["Date"], utc=True)
 
-        now = datetime.utcnow()
-
-        df_api = df_api[
-        (df_api["DateTime"] >= now - timedelta(hours=6)) &
-        (df_api["DateTime"] <= now + timedelta(hours=36))
-        ]
         if not df_api.empty:
             df_api["Date"] = pd.to_datetime(df_api["Date"])
             st.success("✅ API PRO activa")
@@ -105,21 +94,39 @@ def load_real_odds(fixture_id):
 
     except:
         return None
-        
+# =========================================================
+# 📥 DATA (BASE)
+# =========================================================
 @st.cache_data
 def load_data():
+    # 🔥 PRIORIDAD API
     df_api = load_api_data()
-
-    if df_api is not None and not df_api.empty:
+    if df_api is not None:
         return df_api
-
-    return pd.DataFrame()  # 🔥 nunca None
-
-    # fallback SOLO si API falla
+def load_data():
     url = "https://www.football-data.co.uk/fixtures.csv"
     df = pd.read_csv(url)
-    return df
 
+    df = df.dropna(subset=["HomeTeam", "AwayTeam"])
+    df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
+
+    today = datetime.today().date()
+    df["Date_only"] = df["Date"].dt.date
+  
+    df_future = df[df["Date_only"] == today]
+
+    if df_future.empty:
+        df_future = df.sort_values("Date").tail(40)
+
+    df_future["H"] = df_future["B365H"]
+    df_future["D"] = df_future["B365D"]
+    df_future["A"] = df_future["B365A"]
+
+    df_future = df_future.dropna(subset=["H", "D", "A"])
+
+    return df_future
+
+df = load_data()
 
 # =========================================================
 # 🧠 ENGINE BASE (NO TOCAR)
@@ -620,7 +627,7 @@ entradas, lectura, evitar = [], [], []
 # =========================================================
 matches_ranked = []
 
-for index, r in df.iterrows():
+for _, r in df.iterrows():
     ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, r.H, r.D, r.A)
     label, score = classify_match(ph, pa, goals, r.H)
 
