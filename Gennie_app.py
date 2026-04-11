@@ -111,10 +111,9 @@ def load_data():
     df["Date"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
 
     today = datetime.today().date()
-df["Date_only"] = df["Date"].dt.date
-    if df_future.empty:
-    df_future = df[df["Date_only"] >= today].sort_values("Date").head(20)
-df_future = df[df["Date_only"] == today]
+    df["Date_only"] = df["Date"].dt.date
+  
+    df_future = df[df["Date_only"] == today]
 
     if df_future.empty:
         df_future = df.sort_values("Date").tail(40)
