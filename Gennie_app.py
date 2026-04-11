@@ -476,7 +476,8 @@ Cerrar en minuto 70 si sigue 0-0
             "entry": "-",
             "execution": "Skip"
         }
-
+ph = 1 / row.PSH if row.PSH > 0 else 0
+pa = 1 / row.PSA if row.PSA > 0 else 0
 # =========================================================
 # 🧠 SELECTOR REAL SIN JERARQUÍA
 # =========================================================
@@ -518,7 +519,7 @@ def select_best_strategy(home, away, ph, pa, goals, xg_h, xg_a):
     # =========================================================
     scores["FIREBALL"] = (
         (3 if goals >= 2.8 else 0) +
-        (3 if ph < 0.60 else 0) +              # ❗ clave
+        (3 if 0.45 <= ph <= 0.60 else 0) +              # ❗ clave
         (2 if edge < 0.12 else 0)
     )
 
@@ -733,11 +734,7 @@ ph, pa, goals, xg_h, xg_a, goals_trend, scoring, tactics, strategy, market, entr
 label, score = classify_match(ph, pa, goals, row.H)
 
 context, tempo, execution = narrative_engine(home, away, ph, pa, goals, xg_h, xg_a, strategy)
-print("DEBUG:")
-print("ph:", ph)
-print("pa:", pa)
-print("goals:", goals)
-print("edge:", abs(ph - pa))
+
 # =========================================================
 # 🧠 SELECCIÓN REAL SIN JERARQUÍA
 # =========================================================
