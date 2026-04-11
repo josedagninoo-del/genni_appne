@@ -476,8 +476,8 @@ Cerrar en minuto 70 si sigue 0-0
             "entry": "-",
             "execution": "Skip"
         }
-ph = 1 / row.PSH if row.PSH > 0 else 0
-pa = 1 / row.PSA if row.PSA > 0 else 0
+            ph = 1 / row.PSH if row.PSH > 0 else 0
+            pa = 1 / row.PSA if row.PSA > 0 else 0
 # =========================================================
 # 🧠 SELECTOR REAL SIN JERARQUÍA
 # =========================================================
