@@ -36,9 +36,7 @@ def load_api_data():
             return None
 
         data = res.json()
-
-        st.write("API RESPONSE:", len(data.get("response", [])))
-        
+       
         rows = []
         for m in data.get("response", []):
             rows.append({
@@ -84,7 +82,7 @@ def load_real_odds(fixture_id):
 
         data = res.json()
 
-        if not data.get("response"):
+               if not data.get("response"):
             return None
 
         # 🔹 Tomamos primer bookmaker disponible
