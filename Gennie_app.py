@@ -19,14 +19,15 @@ def load_api_data():
             "x-apisports-key": API_KEY
         }
 
-        from datetime import timedelta
+        from datetime import datetime, timedelta
 
         today = datetime.utcnow()
-        tomorrow = today + timedelta(days=2)
+        tomorrow = today + timedelta(days=1)
 
         params = {
-           "league": 39,     # Premier League
-           "season": 2025
+           "from": today.strftime("%Y-%m-%d"),
+           "to": tomorrow.strftime("%Y-%m-%d"),
+           "timezone": "America/Mexico_City"
         }
         res = requests.get(url, headers=headers, params=params, timeout=10)
 
@@ -51,7 +52,18 @@ def load_api_data():
                 "A": 3.0
             })
 
-        df_api = pd.DataFrame(rows)
+       df_api = pd.DataFrame(rows)
+
+       from datetime import timedelta
+
+       now = datetime.utcnow()
+
+       df_api["Date"] = pd.to_datetime(df_api["Date"], utc=True)
+
+       df_api = df_api[
+           (df_api["Date"] >= now - timedelta(hours=6)) &
+           (df_api["Date"] <= now + timedelta(hours=36))
+       ]
 
         if not df_api.empty:
             df_api["Date"] = pd.to_datetime(df_api["Date"], utc=True)
