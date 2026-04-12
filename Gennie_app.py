@@ -14,10 +14,9 @@ def load_api_data():
     try:
         API_KEY = st.secrets.get("API_KEY", "")
 
-        url = "https://api-football-v1.p.rapidapi.com/v3/fixtures"
+        url = "https://v3.football.api-sports.io/fixtures"
         headers = {
-            "X-RapidAPI-Key": API_KEY,
-            "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
+            "x-apisports-key": API_KEY
         }
 
         from datetime import timedelta
@@ -27,7 +26,8 @@ def load_api_data():
 
         params = {
            "from": today.strftime("%Y-%m-%d"),
-           "to": tomorrow.strftime("%Y-%m-%d")
+           "to": tomorrow.strftime("%Y-%m-%d"),
+           "timezone": "America/Mexico_City"
         }
 
         res = requests.get(url, headers=headers, params=params, timeout=10)
