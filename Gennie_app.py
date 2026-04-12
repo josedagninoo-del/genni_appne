@@ -25,9 +25,8 @@ def load_api_data():
         tomorrow = today + timedelta(days=1)
 
         params = {
-           "from": today.strftime("%Y-%m-%d"),
-           "to": tomorrow.strftime("%Y-%m-%d"),
-           "timezone": "America/Mexico_City"
+            "league": 39,
+            "season": 2025
         }
         res = requests.get(url, headers=headers, params=params, timeout=10)
 
@@ -56,13 +55,13 @@ def load_api_data():
 
         from datetime import timedelta
 
-        now = datetime.utcnow()
-
         df_api["Date"] = pd.to_datetime(df_api["Date"], utc=True)
 
+        now = datetime.utcnow()
+
         df_api = df_api[
-           (df_api["Date"] >= now - timedelta(hours=6)) &
-           (df_api["Date"] <= now + timedelta(hours=36))
+            (df_api["Date"] >= now - timedelta(hours=12)) &
+            (df_api["Date"] <= now + timedelta(hours=48))
         ]
 
         if not df_api.empty:
