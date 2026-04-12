@@ -22,7 +22,7 @@ def load_api_data():
         from datetime import datetime, timedelta
 
         today = datetime.utcnow()
-        tomorrow = today + timedelta(days=2)
+        tomorrow = today + timedelta(days=1)
 
         params = {
             "league": 39,
@@ -60,8 +60,8 @@ def load_api_data():
         now = datetime.utcnow()
 
         df_api = df_api[
-            (df_api["Date"] >= now - timedelta(hours=12)) &
-            (df_api["Date"] <= now + timedelta(hours=48))
+            (df_api["Date"] >= now - timedelta(days=2)) &
+            (df_api["Date"] <= now + timedelta(days=5))
         ]
 
         if not df_api.empty:
