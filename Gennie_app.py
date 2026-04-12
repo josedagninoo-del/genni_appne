@@ -37,6 +37,10 @@ def load_api_data():
 
         data = res.json()
 
+        st.write("STATUS:", res.status_code)
+        st.write("RESPONSE LEN:", len(data.get("response", [])))
+        st.write(data)
+
         rows = []
         for m in data.get("response", []):
             rows.append({
