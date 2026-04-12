@@ -22,7 +22,7 @@ def load_api_data():
         from datetime import datetime, timedelta
 
         today = datetime.utcnow()
-        tomorrow = today + timedelta(days=1)
+        tomorrow = today + timedelta(days=2)
 
         params = {
             "league": 39,
