@@ -37,8 +37,8 @@ def load_api_data():
 
         data = res.json()
 
-        st.write("STATUS:", res.status_code)
-        st.write("RESPONSE LEN:", len(data.get("response", [])))
+        st.error(f"STATUS: {res.status_code}")
+        st.error(f"RESPONSE LEN: {len(data.get('response', []))}")
 
         rows = []
         for m in data.get("response", []):
@@ -80,6 +80,8 @@ def load_real_odds(fixture_id):
 
         res = requests.get(url, headers=headers, params=params, timeout=10)
 
+        st.error("REQUEST HECHO")
+        
         if res.status_code != 200:
             return None
 
@@ -107,7 +109,6 @@ def load_real_odds(fixture_id):
 # =========================================================
 # 📥 DATA (BASE)
 # =========================================================
-@st.cache_data
 def load_data():
     # 🔥 PRIORIDAD API
     df_api = load_api_data()
