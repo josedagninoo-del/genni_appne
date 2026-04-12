@@ -25,11 +25,9 @@ def load_api_data():
         tomorrow = today + timedelta(days=2)
 
         params = {
-            "from": today.strftime("%Y-%m-%d"),
-            "to": tomorrow.strftime("%Y-%m-%d"),
-            "timezone": "America/Mexico_City"
+           "league": 39,     # Premier League
+           "season": 2025
         }
-
         res = requests.get(url, headers=headers, params=params, timeout=10)
 
         if res.status_code != 200:
