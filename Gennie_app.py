@@ -21,8 +21,8 @@ def load_api_data():
 
         from datetime import timedelta
 
-            today = datetime.utcnow()
-            tomorrow = today + timedelta(days=2)
+        today = datetime.utcnow()
+        tomorrow = today + timedelta(days=2)
 
         params = {
             "from": today.strftime("%Y-%m-%d"),
