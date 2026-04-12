@@ -21,11 +21,13 @@ def load_api_data():
 
         from datetime import timedelta
 
-        today = datetime.utcnow()
-        tomorrow = today + timedelta(days=2)
+            today = datetime.utcnow()
+            tomorrow = today + timedelta(days=2)
 
         params = {
-            "Live" : "all"
+            "from": today.strftime("%Y-%m-%d"),
+            "to": tomorrow.strftime("%Y-%m-%d"),
+            "timezone": "America/Mexico_City"
         }
 
         res = requests.get(url, headers=headers, params=params, timeout=10)
