@@ -645,7 +645,10 @@ for _, r in df.iterrows():
 
 # 🔥 Ordenar por score DESC (mejores primero)
 matches_ranked = sorted(matches_ranked, key=lambda x: x["priority"], reverse=True)
-matches_ranked = [m for m in matches_ranked if m["priority"] >= 5]
+
+top_cut = int(len(matches_ranked) * 0.3)  # top 30%
+
+matches_ranked = matches_ranked[:top_cut]
 
 # Reiniciar listas
 entradas, lectura, evitar = [], [], []
