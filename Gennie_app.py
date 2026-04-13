@@ -114,6 +114,9 @@ def load_data():
     return pd.DataFrame()
 df = load_data()
 odds_map = load_all_odds()
+# 🔘 Selección manual de partidos
+if "selected_matches" not in st.session_state:
+    st.session_state.selected_matches = []
 if df is None or df.empty:
     st.error("No hay partidos disponibles desde la API")
     st.stop()
@@ -619,13 +622,15 @@ matches_ranked = []
 
 for _, r in df.iterrows():
 
-    h, d, a = r.H, r.D, r.A
+    # ⛔ SI NO HAY ODDS REALES → DESCARTAR DEL RANKING
+    if r["fixture_id"] not in odds_map:
+        continue
 
-    # 🔥 CARGAR ODDS REALES AQUÍ
-    if r["fixture_id"] in odds_map:
-        real = odds_map[r["fixture_id"]]
-        if real and all(real):
-           h, d, a = real
+    real = odds_map[r["fixture_id"]]
+    if not real or not all(real):
+        continue
+
+    h, d, a = real
 
 
     # 🔥 USAR ODDS REALES EN EL MODELO
@@ -673,9 +678,23 @@ for m in matches_ranked:
         lectura.append(m["match"])
     else:
         evitar.append(m["match"])
-st.markdown("### 🟢 PARTIDOS PARA ENTRAR")
-for m in entradas[:5]:
-    st.write(m)
+st.markdown("### 🟢 PARTIDOS PARA ENTRAR (selecciona)")
+
+for m in entradas[:10]:
+    if st.checkbox(m, key=f"pick_{m}"):
+        if m not in st.session_state.selected_matches:
+            st.session_state.selected_matches.append(m)
+    else:
+        if m in st.session_state.selected_matches:
+            st.session_state.selected_matches.remove(m)
+
+st.markdown("### 🎯 Selección actual")
+for m in st.session_state.selected_matches:
+    st.write("✔", m)
+
+if st.button("🧹 Limpiar selección"):
+    st.session_state.selected_matches = []
+
 
 st.markdown("### 🟡 PARTIDOS DE LECTURA")
 for m in lectura[:5]:
@@ -689,6 +708,12 @@ for m in evitar[:5]:
 # =========================================================
 # 🎯 SELECTOR
 # =========================================================
+# 🎯 Si hay selección manual, filtrar el DataFrame
+if st.session_state.selected_matches:
+    df = df[df.apply(
+        lambda x: f"{x.HomeTeam} vs {x.AwayTeam}" in st.session_state.selected_matches,
+        axis=1
+    )]
 matches = [
     f"{r.HomeTeam} vs {r.AwayTeam} | {r.Div} | {r.Date.strftime('%d/%m/%Y')}"
     for _, r in df.iterrows()
