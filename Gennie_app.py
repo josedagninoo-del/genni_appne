@@ -622,13 +622,16 @@ matches_ranked = []
 
 for _, r in df.iterrows():
 
-    h, d, a = r.H, r.D, r.A
+    # ⛔ Si no hay odds reales, descartar del ranking
+    if r["fixture_id"] not in odds_map:
+        continue
 
-    # 🔥 CARGAR ODDS REALES AQUÍ
-    if r["fixture_id"] in odds_map:
         real = odds_map[r["fixture_id"]]
-        if real and all(real):
-           h, d, a = real
+    if not real or not all(real):
+        continue
+
+        h, d, a = real
+
 
 
     # 🔥 USAR ODDS REALES EN EL MODELO
