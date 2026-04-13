@@ -636,9 +636,11 @@ for _, r in df.iterrows():
     edge = abs(ph - pa)
 
     priority = (
-    (edge * 10) +        # dominancia real
-    (goals * 1.5) +     # potencial de goles
-    (1 if 1.7 < h < 2.6 else 0)   # zona tradeable
+    (edge * 12) +                         # dominancia real
+    (goals * 2) +                         # potencial de goles
+    (2 if 1.8 <= h <= 2.4 else -1) +      # zona ideal de trading
+    (-2 if h < 1.40 else 0) +             # penaliza favoritos muy cortos
+    (1 if abs(h - a) > 0.25 else 0)       # desequilibrio real
     )
    
     matches_ranked.append({
