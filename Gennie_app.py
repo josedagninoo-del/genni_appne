@@ -19,14 +19,13 @@ def load_api_data():
             "x-apisports-key": API_KEY
         }
 
-        from datetime import datetime, timedelta
+       from datetime import datetime
 
-        today = datetime.utcnow()
-        tomorrow = today + timedelta(days=1)
+       today = datetime.utcnow().strftime("%Y-%m-%d")
 
-        params = {
-            "league": 39,
-            "season": 2025
+       params = {
+          "date": today,
+          "timezone": "America/Mexico_City"
         }
         res = requests.get(url, headers=headers, params=params, timeout=10)
 
@@ -59,10 +58,7 @@ def load_api_data():
 
         now = datetime.utcnow()
 
-        df_api = df_api[
-            (df_api["Date"] >= now - timedelta(days=2)) &
-            (df_api["Date"] <= now + timedelta(days=5))
-        ]
+       
 
         if not df_api.empty:
             df_api["Date"] = pd.to_datetime(df_api["Date"], utc=True)
