@@ -114,6 +114,9 @@ def load_data():
     return pd.DataFrame()
 df = load_data()
 odds_map = load_all_odds()
+# 🔘 Estado de selección manual
+if "selected_matches" not in st.session_state:
+    st.session_state.selected_matches = []
 if df is None or df.empty:
     st.error("No hay partidos disponibles desde la API")
     st.stop()
@@ -675,9 +678,19 @@ for m in matches_ranked:
         lectura.append(m["match"])
     else:
         evitar.append(m["match"])
-st.markdown("### 🟢 PARTIDOS PARA ENTRAR")
-for m in entradas[:5]:
-    st.write(m)
+st.markdown("### 🟢 PARTIDOS PARA ENTRAR (selecciona los que quieras)")
+
+for m in entradas[:10]:
+    if st.checkbox(m, key=f"pick_{m}"):
+        if m not in st.session_state.selected_matches:
+            st.session_state.selected_matches.append(m)
+    else:
+        if m in st.session_state.selected_matches:
+            st.session_state.selected_matches.remove(m)
+
+st.markdown("### 🎯 Partidos seleccionados")
+for m in st.session_state.selected_matches:
+    st.write("✔", m)
 
 st.markdown("### 🟡 PARTIDOS DE LECTURA")
 for m in lectura[:5]:
@@ -691,6 +704,12 @@ for m in evitar[:5]:
 # =========================================================
 # 🎯 SELECTOR
 # =========================================================
+# 🎯 Filtrar partidos seleccionados (si hay selección activa)
+if st.session_state.selected_matches:
+    df = df[df.apply(
+        lambda x: f"{x.HomeTeam} vs {x.AwayTeam}" in st.session_state.selected_matches,
+        axis=1
+    )]
 matches = [
     f"{r.HomeTeam} vs {r.AwayTeam} | {r.Div} | {r.Date.strftime('%d/%m/%Y')}"
     for _, r in df.iterrows()
