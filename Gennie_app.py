@@ -660,25 +660,25 @@ for _, r in df.iterrows():
                 h, d, a = h_real, d_real, a_real
 
     # 🔥 USAR ODDS REALES EN EL MODELO
-    ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, h, d, a)
+     ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, h, d, a)
 
-    label, score = classify_match(ph, pa, goals, h)
+     label, score = classify_match(ph, pa, goals, h)
 
-    edge = abs(ph - pa)
+     edge = abs(ph - pa)
 
-    priority = (
-    (edge * 10) +        # dominancia real
-    (goals * 1.5) +     # potencial de goles
-    (1 if 1.7 < h < 2.6 else 0)   # zona tradeable
-    )
+     priority = (
+     (edge * 10) +        # dominancia real
+     (goals * 1.5) +     # potencial de goles
+     (1 if 1.7 < h < 2.6 else 0)   # zona tradeable
+     )
    
-    matches_ranked.append({
+     matches_ranked.append({
         "match": f"{r.HomeTeam} vs {r.AwayTeam}",
         "league": r.Div,
         "label": label,
         "score": score,
         "priority": priority
-    })
+     })
  
 
 # 🔥 Ordenar por score DESC (mejores primero)
