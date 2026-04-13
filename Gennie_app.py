@@ -71,6 +71,7 @@ def load_api_data():
 # =========================================================
 # 💰 ODDS REALES API (AGREGADO)
 # =========================================================
+@st.cache_data(ttl=300)
 def load_real_odds(fixture_id):
 
     try:
@@ -628,20 +629,35 @@ entradas, lectura, evitar = [], [], []
 matches_ranked = []
 
 for _, r in df.iterrows():
-    ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, r.H, r.D, r.A)
-    label, score = classify_match(ph, pa, goals, r.H)
+
+    h, d, a = r.H, r.D, r.A
+
+    # 🔥 CARGAR ODDS REALES AQUÍ
+    if "fixture_id" in r and pd.notna(r["fixture_id"]):
+
+        real_odds = load_real_odds(r["fixture_id"])
+
+        if real_odds:
+            h_real, d_real, a_real = real_odds
+
+            if h_real and d_real and a_real:
+                h, d, a = h_real, d_real, a_real
+
+    # 🔥 USAR ODDS REALES EN EL MODELO
+    ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, h, d, a)
+
+    label, score = classify_match(ph, pa, goals, h)
 
     edge = abs(ph - pa)
-
-    priority = (score * 2) + (goals)
+    priority = (score * 2) + goals
 
     matches_ranked.append({
         "match": f"{r.HomeTeam} vs {r.AwayTeam}",
         "label": label,
         "score": score,
         "priority": priority
-    }) 
-   
+    })
+ 
 
 # 🔥 Ordenar por score DESC (mejores primero)
 matches_ranked = sorted(matches_ranked, key=lambda x: x["priority"], reverse=True)
