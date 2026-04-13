@@ -674,8 +674,8 @@ for _, r in df.iterrows():
     stats = load_fixture_stats(r["fixture_id"])
     attack_factor = 1.0
 
-if stats:
-    try:
+    if stats:
+        try:
         teams = list(stats.values())
         home_stats, away_stats = teams[0], teams[1]
 
@@ -699,17 +699,6 @@ if stats:
     except:
         pass
 
-if stats:
-    try:
-        teams = list(stats.values())
-        home_stats, away_stats = teams[0], teams[1]
-
-        home_sot = home_stats.get("Shots on Goal", 0) or 0
-        away_sot = away_stats.get("Shots on Goal", 0) or 0
-
-        attack_factor += (home_sot + away_sot) * 0.02
-    except:
-        pass
 
 
     # 🔥 USAR ODDS REALES EN EL MODELO
@@ -725,12 +714,7 @@ if stats:
     (attack_factor * 2) +   # fuerza ofensiva real
     (1 if 1.8 < h < 2.4 else 0)  # zona óptima de trading
     )
-    priority = (
-        (edge * 10) +        # dominancia real
-        (goals * 1.5) +     # potencial de goles
-        (1 if 1.7 < h < 2.6 else 0)   # zona tradeable
-        )
-   
+       
     matches_ranked.append({
         "match": f"{r.HomeTeam} vs {r.AwayTeam}",
         "league": r.Div,
