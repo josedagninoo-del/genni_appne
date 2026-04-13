@@ -102,7 +102,35 @@ def load_all_odds():
         return odds_map
     except:
         return {}
+        
+@st.cache_data(ttl=300)
+def load_fixture_stats(fixture_id):
+    try:
+        API_KEY = st.secrets.get("API_KEY", "")
+        url = "https://v3.football.api-sports.io/fixtures/statistics"
+        headers = {"x-apisports-key": API_KEY}
+        params = {"fixture": fixture_id}
 
+        res = requests.get(url, headers=headers, params=params, timeout=10)
+        if res.status_code != 200:
+            return None
+
+        data = res.json().get("response", [])
+        if not data:
+            return None
+
+        stats = {}
+
+        for team in data:
+            s = {}
+            for item in team["statistics"]:
+                s[item["type"]] = item["value"]
+            stats[team["team"]["id"]] = s
+
+        return stats
+
+    except:
+        return None
 # =========================================================
 # 📥 DATA (BASE)
 # =========================================================
@@ -114,6 +142,7 @@ def load_data():
     return pd.DataFrame()
 df = load_data()
 odds_map = load_all_odds()
+
 # 🔥 Eliminar partidos sin odds reales desde el origen
 df = df[df["fixture_id"].isin(odds_map.keys())]
 
@@ -130,7 +159,7 @@ if df is None or df.empty:
 # =========================================================
 # 🧠 ENGINE BASE (NO TOCAR)
 # =========================================================
-def genie_analysis(home, away, h, d, a):
+def genie_analysis(home, away, h, d, a, attack_factor=1.0):
 
     imp_h = 1 / h
     imp_d = 1 / d
@@ -140,8 +169,8 @@ def genie_analysis(home, away, h, d, a):
     ph = imp_h / overround
     pa = imp_a / overround
 
-    total_goals = 2.4 + (abs(h - a) * 0.6)
-
+    total_goals = (2.4 + (abs(h - a) * 0.6)) * attack_factor
+    
     xg_home = round(total_goals * ph, 2)
     xg_away = round(total_goals * pa, 2)
 
@@ -638,9 +667,25 @@ for _, r in df.iterrows():
 
     h, d, a = real
 
+    # 📊 Cargar estadísticas reales
+stats = load_fixture_stats(r["fixture_id"])
+attack_factor = 1.0
+
+if stats:
+    try:
+        teams = list(stats.values())
+        home_stats, away_stats = teams[0], teams[1]
+
+        home_sot = home_stats.get("Shots on Goal", 0) or 0
+        away_sot = away_stats.get("Shots on Goal", 0) or 0
+
+        attack_factor += (home_sot + away_sot) * 0.02
+    except:
+        pass
+
 
     # 🔥 USAR ODDS REALES EN EL MODELO
-    ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, h, d, a)
+    ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, h, d, a, attack_factor)
 
     label, score = classify_match(ph, pa, goals, h)
 
