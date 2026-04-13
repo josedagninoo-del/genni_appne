@@ -622,6 +622,7 @@ entradas, lectura, evitar = [], [], []
 # =========================================================
 # 🔥 RANKING DE PARTIDOS (AGREGADO)
 # =========================================================
+
 matches_ranked = []
 
 for _, r in df.iterrows():
@@ -656,12 +657,12 @@ entradas, lectura, evitar = [], [], []
 # Clasificar ya ordenados
 for m in matches_ranked:
 
-    if m["label"] == "🟢 ENTRADA":
-        entradas.append(m["match"])
-    elif m["label"] == "🟡 LECTURA":
-        lectura.append(m["match"])
-    else:
-        evitar.append(m["match"])
+    matches_ranked.append({
+    "match": f"{r.HomeTeam} vs {r.AwayTeam}",
+    "label": label,
+    "priority": priority
+    })
+   
 st.markdown("### 🟢 PARTIDOS PARA ENTRAR")
 for m in entradas[:5]:
     st.write(m)
@@ -674,7 +675,7 @@ st.markdown("### 🔴 EVITAR")
 for m in evitar[:5]:
     st.write(m)
 
-
+matches_ranked = sorted(matches_ranked, key=lambda x: x["priority"], reverse=True)
 # =========================================================
 # 🎯 SELECTOR
 # =========================================================
