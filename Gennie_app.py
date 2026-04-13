@@ -666,6 +666,34 @@ for _, r in df.iterrows():
         continue
 
     h, d, a = real
+# 📊 Cargar estadísticas del partido
+stats = load_fixture_stats(r["fixture_id"])
+attack_factor = 1.0
+
+if stats:
+    try:
+        teams = list(stats.values())
+        home_stats, away_stats = teams[0], teams[1]
+
+        # Extraer métricas ofensivas
+        home_sot = home_stats.get("Shots on Goal", 0) or 0
+        away_sot = away_stats.get("Shots on Goal", 0) or 0
+
+        home_shots = home_stats.get("Total Shots", 0) or 0
+        away_shots = away_stats.get("Total Shots", 0) or 0
+
+        home_corners = home_stats.get("Corner Kicks", 0) or 0
+        away_corners = away_stats.get("Corner Kicks", 0) or 0
+
+        # Normalización simple
+        attack_factor += (
+            (home_sot + away_sot) * 0.015 +
+            (home_shots + away_shots) * 0.01 +
+            (home_corners + away_corners) * 0.008
+        )
+
+    except:
+        pass
 
     # 📊 Cargar estadísticas reales
 stats = load_fixture_stats(r["fixture_id"])
