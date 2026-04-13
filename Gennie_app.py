@@ -19,11 +19,11 @@ def load_api_data():
             "x-apisports-key": API_KEY
         }
 
-       from datetime import datetime
+        from datetime import datetime
 
-       today = datetime.utcnow().strftime("%Y-%m-%d")
+        today = datetime.utcnow().strftime("%Y-%m-%d")
 
-       params = {
+        params = {
           "date": today,
           "timezone": "America/Mexico_City"
         }
