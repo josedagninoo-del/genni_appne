@@ -578,7 +578,6 @@ def build_strategy(name):
         "execution": "-"
     })
 
-matches_ranked = [m for m in matches_ranked if m["priority"] >= 5]
 # =========================================================
 # 🧠 CLASIFICACIÓN (BASE)
 # =========================================================
