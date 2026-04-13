@@ -706,6 +706,10 @@ for _, r in df.iterrows():
 
     label, score = classify_match(ph, pa, goals, h)
 
+    # ⛔ Filtro de calidad mínima
+    if attack_factor < 1.15:
+        continue
+
     edge = abs(ph - pa)
 
     priority = (
