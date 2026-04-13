@@ -645,7 +645,7 @@ for _, r in df.iterrows():
 
      h, d, a = r.H, r.D, r.A
 
-    if r["fixture_id"] in odds_map:
+        if r["fixture_id"] in odds_map:
         real = odds_map[r["fixture_id"]]
         if real and all(real):
         h, d, a = real
