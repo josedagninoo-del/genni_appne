@@ -623,9 +623,9 @@ for _, r in df.iterrows():
 
     # 🔥 CARGAR ODDS REALES AQUÍ
     if r["fixture_id"] in odds_map:
-         real = odds_map[r["fixture_id"]]
-    if real and all(real):
-         h, d, a = real
+        real = odds_map[r["fixture_id"]]
+        if real and all(real):
+        h, d, a = real
 
 
     # 🔥 USAR ODDS REALES EN EL MODELO
