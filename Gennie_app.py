@@ -1,3 +1,4 @@
+import traceback
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -645,8 +646,11 @@ for _, r in df.iterrows():
         })
 
     except Exception as e:
-        continue  # 🔒 evita que la app muera
-
+    st.error(f"Error en partido: {r.HomeTeam} vs {r.AwayTeam}")
+    st.error(str(e))
+    st.text(traceback.format_exc())
+    continue
+   
 # 🔥 Ordenar por score DESC (mejores primero)
 matches_ranked = sorted(matches_ranked, key=lambda x: x["priority"], reverse=True)
     if not matches_ranked:
