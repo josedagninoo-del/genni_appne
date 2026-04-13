@@ -37,6 +37,8 @@ def load_api_data():
         st.error(f"STATUS: {res.status_code}")
         st.error(f"RESPONSE LEN: {len(data.get('response', []))}")
 
+        st.write("ODDS RESPONSE:", data)
+        
         rows = []
         for m in data.get("response", []):
             rows.append({
@@ -75,14 +77,16 @@ def load_real_odds(fixture_id):
     try:
         API_KEY = st.secrets.get("API_KEY", "")
 
-        url = "https://api-football-v1.p.rapidapi.com/v3/odds"
+        url = "https://v3.football.api-sports.io/odds" 
         headers = {
-            "X-RapidAPI-Key": API_KEY,
-            "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
+             "x-apisports-key": API_KEY
         }
-
-        params = {"fixture": fixture_id}
-
+               
+        params = {
+            "fixture": fixture_id,
+            "bookmaker": 8  # bet365 (más consistente)
+        }
+       
         res = requests.get(url, headers=headers, params=params, timeout=10)
 
         st.error("REQUEST HECHO")
