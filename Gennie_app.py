@@ -645,15 +645,15 @@ for _, r in df.iterrows():
 
      h, d, a = r.H, r.D, r.A
 
-        if r["fixture_id"] in odds_map:
+     if r["fixture_id"] in odds_map:
         real = odds_map[r["fixture_id"]]
-        if real and all(real):
+     if real and all(real):
         h, d, a = real
-        if "fixture_id" in r and pd.notna(r["fixture_id"]):
+     if "fixture_id" in r and pd.notna(r["fixture_id"]):
 
         real_odds = load_real_odds(r["fixture_id"])
 
-        if real_odds:
+     if real_odds:
             h_real, d_real, a_real = real_odds
 
             if h_real and d_real and a_real:
