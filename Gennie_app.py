@@ -698,7 +698,8 @@ for _, r in df.iterrows():
 
         except:
             pass
-    
+            
+    st.write(r["HomeTeam"], r["AwayTeam"], "AF:", round(attack_factor, 2))
    
     # 🔥 USAR ODDS REALES EN EL MODELO
     ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, h, d, a, attack_factor)
