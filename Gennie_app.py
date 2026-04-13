@@ -114,9 +114,6 @@ def load_data():
     return pd.DataFrame()
 df = load_data()
 odds_map = load_all_odds()
-# 🔘 Estado de selección manual
-if "selected_matches" not in st.session_state:
-    st.session_state.selected_matches = []
 if df is None or df.empty:
     st.error("No hay partidos disponibles desde la API")
     st.stop()
@@ -622,16 +619,13 @@ matches_ranked = []
 
 for _, r in df.iterrows():
 
-    # ⛔ Si no hay odds reales, descartar del ranking
-    if r["fixture_id"] not in odds_map:
-        continue
+    h, d, a = r.H, r.D, r.A
 
+    # 🔥 CARGAR ODDS REALES AQUÍ
+    if r["fixture_id"] in odds_map:
         real = odds_map[r["fixture_id"]]
-    if not real or not all(real):
-        continue
-
-        h, d, a = real
-
+        if real and all(real):
+           h, d, a = real
 
 
     # 🔥 USAR ODDS REALES EN EL MODELO
@@ -642,11 +636,9 @@ for _, r in df.iterrows():
     edge = abs(ph - pa)
 
     priority = (
-    (edge * 12) +                         # dominancia real
-    (goals * 2) +                         # potencial de goles
-    (2 if 1.8 <= h <= 2.4 else -1) +      # zona ideal de trading
-    (-2 if h < 1.40 else 0) +             # penaliza favoritos muy cortos
-    (1 if abs(h - a) > 0.25 else 0)       # desequilibrio real
+    (edge * 10) +        # dominancia real
+    (goals * 1.5) +     # potencial de goles
+    (1 if 1.7 < h < 2.6 else 0)   # zona tradeable
     )
    
     matches_ranked.append({
@@ -681,19 +673,9 @@ for m in matches_ranked:
         lectura.append(m["match"])
     else:
         evitar.append(m["match"])
-st.markdown("### 🟢 PARTIDOS PARA ENTRAR (selecciona los que quieras)")
-
-for m in entradas[:10]:
-    if st.checkbox(m, key=f"pick_{m}"):
-        if m not in st.session_state.selected_matches:
-            st.session_state.selected_matches.append(m)
-    else:
-        if m in st.session_state.selected_matches:
-            st.session_state.selected_matches.remove(m)
-
-st.markdown("### 🎯 Partidos seleccionados")
-for m in st.session_state.selected_matches:
-    st.write("✔", m)
+st.markdown("### 🟢 PARTIDOS PARA ENTRAR")
+for m in entradas[:5]:
+    st.write(m)
 
 st.markdown("### 🟡 PARTIDOS DE LECTURA")
 for m in lectura[:5]:
@@ -707,12 +689,6 @@ for m in evitar[:5]:
 # =========================================================
 # 🎯 SELECTOR
 # =========================================================
-# 🎯 Filtrar partidos seleccionados (si hay selección activa)
-if st.session_state.selected_matches:
-    df = df[df.apply(
-        lambda x: f"{x.HomeTeam} vs {x.AwayTeam}" in st.session_state.selected_matches,
-        axis=1
-    )]
 matches = [
     f"{r.HomeTeam} vs {r.AwayTeam} | {r.Div} | {r.Date.strftime('%d/%m/%Y')}"
     for _, r in df.iterrows()
