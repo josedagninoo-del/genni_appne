@@ -1,4 +1,3 @@
-import traceback
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -626,40 +625,17 @@ entradas, lectura, evitar = [], [], []
 matches_ranked = []
 
 for _, r in df.iterrows():
-    try:
-        ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, r.H, r.D, r.A)
+    ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, r.H, r.D, r.A)
+    label, score = classify_match(ph, pa, goals, r.H)
 
-        # 🔒 VALIDACIÓN (CLAVE)
-        if ph is None or pa is None or goals is None:
-            continue
+    matches_ranked.append({
+        "match": f"{r.HomeTeam} vs {r.AwayTeam}",
+        "label": label,
+        "score": score
+    })
 
-        label, score = classify_match(ph, pa, goals, r.H)
-
-        edge = abs(ph - pa)
-
-        priority = (edge * 5) + (goals * 1.5)
-
-        matches_ranked.append({
-            "match": f"{r.HomeTeam} vs {r.AwayTeam}",
-            "label": label,
-            "priority": priority
-        })
-
-    except Exception as e:
-    st.error(f"Error en partido: {r.HomeTeam} vs {r.AwayTeam}")
-    st.error(str(e))
-    st.text(traceback.format_exc())
-    continue
-   
 # 🔥 Ordenar por score DESC (mejores primero)
-matches_ranked = sorted(matches_ranked, key=lambda x: x["priority"], reverse=True)
-    if not matches_ranked:
-        st.warning("No hay partidos válidos tras el análisis")
-        st.stop()
-
-top_cut = int(len(matches_ranked) * 0.3)  # top 30%
-
-matches_ranked = matches_ranked[:top_cut]
+matches_ranked = sorted(matches_ranked, key=lambda x: x["score"], reverse=True)
 
 # Reiniciar listas
 entradas, lectura, evitar = [], [], []
@@ -667,12 +643,12 @@ entradas, lectura, evitar = [], [], []
 # Clasificar ya ordenados
 for m in matches_ranked:
 
-    matches_ranked.append({
-    "match": f"{r.HomeTeam} vs {r.AwayTeam}",
-    "label": label,
-    "priority": priority
-    })
-   
+    if m["label"] == "🟢 ENTRADA":
+        entradas.append(m["match"])
+    elif m["label"] == "🟡 LECTURA":
+        lectura.append(m["match"])
+    else:
+        evitar.append(m["match"])
 st.markdown("### 🟢 PARTIDOS PARA ENTRAR")
 for m in entradas[:5]:
     st.write(m)
@@ -685,7 +661,7 @@ st.markdown("### 🔴 EVITAR")
 for m in evitar[:5]:
     st.write(m)
 
-matches_ranked = sorted(matches_ranked, key=lambda x: x["priority"], reverse=True)
+
 # =========================================================
 # 🎯 SELECTOR
 # =========================================================
