@@ -72,49 +72,37 @@ def load_api_data():
 # 💰 ODDS REALES API (AGREGADO)
 # =========================================================
 @st.cache_data(ttl=300)
-def load_real_odds(fixture_id):
-
+def load_all_odds():
     try:
         API_KEY = st.secrets.get("API_KEY", "")
+        url = "https://v3.football.api-sports.io/odds"
+        headers = {"x-apisports-key": API_KEY}
 
-        url = "https://v3.football.api-sports.io/odds" 
-        headers = {
-             "x-apisports-key": API_KEY
-        }
-               
-        params = {
-            "fixture": fixture_id,
-            "bookmaker": 8  # bet365 (más consistente)
-        }
-       
+        today = datetime.utcnow().strftime("%Y-%m-%d")
+        params = {"date": today}
+
         res = requests.get(url, headers=headers, params=params, timeout=10)
-
-        #st.error("REQUEST HECHO")
-        
         if res.status_code != 200:
-            return None
+            return {}
 
         data = res.json()
+        odds_map = {}
 
-        if not data.get("response"):
-            return None
+        for match in data.get("response", []):
+            fid = match["fixture"]["id"]
+            try:
+                for b in match["bookmakers"]:
+                    for bet in b["bets"]:
+                        if bet["name"] == "Match Winner":
+                            vals = {v["value"]: float(v["odd"]) for v in bet["values"]}
+                            odds_map[fid] = (vals.get("Home"), vals.get("Draw"), vals.get("Away"))
+            except:
+                continue
 
-        # 🔹 Tomamos primer bookmaker disponible
-        bookmakers = data["response"][0]["bookmakers"]
-
-        for b in bookmakers:
-            for bet in b["bets"]:
-                if bet["name"] == "Match Winner":
-                    values = bet["values"]
-
-                    odds = {v["value"]: float(v["odd"]) for v in values}
-
-                    return odds.get("Home"), odds.get("Draw"), odds.get("Away")
-
-        return None
-
+        return odds_map
     except:
-        return None
+        return {}
+  
 # =========================================================
 # 📥 DATA (BASE)
 # =========================================================
@@ -125,6 +113,7 @@ def load_data():
         return df_api
     return pd.DataFrame()
 df = load_data()
+odds_map = load_all_odds()
 if df is None or df.empty:
     st.error("No hay partidos disponibles desde la API")
     st.stop()
@@ -633,15 +622,11 @@ for _, r in df.iterrows():
     h, d, a = r.H, r.D, r.A
 
     # 🔥 CARGAR ODDS REALES AQUÍ
-    if "fixture_id" in r and pd.notna(r["fixture_id"]):
-
-        real_odds = load_real_odds(r["fixture_id"])
-
-        if real_odds:
-            h_real, d_real, a_real = real_odds
-
-            if h_real and d_real and a_real:
-                h, d, a = h_real, d_real, a_real
+    if r["fixture_id"] in odds_map:
+    real = odds_map[r["fixture_id"]]
+    if real and all(real):
+        h, d, a = real
+       
 
     # 🔥 USAR ODDS REALES EN EL MODELO
     ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, h, d, a)
