@@ -628,14 +628,24 @@ for _, r in df.iterrows():
     ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, r.H, r.D, r.A)
     label, score = classify_match(ph, pa, goals, r.H)
 
+    edge = abs(ph - pa)
+
+    priority = (
+        (edge * 5) +
+        (goals * 1.5)
+    )
+
     matches_ranked.append({
         "match": f"{r.HomeTeam} vs {r.AwayTeam}",
         "label": label,
-        "score": score
+        "score": score,
+        "priority": priority
     })
 
+
 # 🔥 Ordenar por score DESC (mejores primero)
-matches_ranked = sorted(matches_ranked, key=lambda x: x["score"], reverse=True)
+matches_ranked = sorted(matches_ranked, key=lambda x: x["priority"], reverse=True)
+matches_ranked = [m for m in matches_ranked if m["priority"] >= 5]
 
 # Reiniciar listas
 entradas, lectura, evitar = [], [], []
