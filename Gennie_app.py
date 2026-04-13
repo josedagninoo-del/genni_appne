@@ -114,6 +114,12 @@ def load_data():
     return pd.DataFrame()
 df = load_data()
 odds_map = load_all_odds()
+# 🔥 Eliminar partidos sin odds reales desde el origen
+df = df[df["fixture_id"].isin(odds_map.keys())]
+
+if df.empty:
+    st.error("No hay partidos con odds reales hoy")
+    st.stop()
 # 🔘 Selección manual de partidos
 if "selected_matches" not in st.session_state:
     st.session_state.selected_matches = []
