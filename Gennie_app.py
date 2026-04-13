@@ -649,10 +649,16 @@ for _, r in df.iterrows():
     label, score = classify_match(ph, pa, goals, h)
 
     edge = abs(ph - pa)
-    priority = (score * 2) + goals
 
+    priority = (
+    (edge * 10) +        # dominancia real
+    (goals * 1.5) +     # potencial de goles
+    (1 if 1.7 < h < 2.6 else 0)   # zona tradeable
+    )
+   
     matches_ranked.append({
         "match": f"{r.HomeTeam} vs {r.AwayTeam}",
+        "league": r.Div,
         "label": label,
         "score": score,
         "priority": priority
@@ -687,7 +693,12 @@ st.markdown("### 🔴 EVITAR")
 for m in evitar[:5]:
     st.write(m)
 
+bad_leagues = ["U17", "U20", "Youth", "Women"]
 
+matches_ranked = [
+    m for m in matches_ranked
+    if not any(x in m["league"] for x in bad_leagues)
+]
 # =========================================================
 # 🎯 SELECTOR
 # =========================================================
