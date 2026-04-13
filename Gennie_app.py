@@ -211,8 +211,12 @@ def genie_analysis(home, away, h, d, a, attack_factor=1.0):
         entry = "Min 15-25"
         exit = "Tras goles"
 
-    confidence = round((1 - (overround - 1)) * 10, 2)
+    # 🧠 Confianza combinada (mercado + modelo)
+    model_conf = min(total_goals / 3.5, 1)   # confianza basada en goles esperados
+    market_conf = max(0, 1 - (overround - 1))  # confianza basada en eficiencia del mercado
 
+    confidence = round((0.6 * model_conf + 0.4 * market_conf) * 10, 2)
+   
     return ph, pa, total_goals, xg_home, xg_away, goals_trend, scoring, tactics, strategy, market, entry, exit, confidence
 # =========================================================
 # 🤖 ML GOAL TIMING MODEL (AGREGADO)
@@ -666,9 +670,9 @@ for _, r in df.iterrows():
         continue
 
     h, d, a = real
-# 📊 Cargar estadísticas del partido
-stats = load_fixture_stats(r["fixture_id"])
-attack_factor = 1.0
+    # 📊 Cargar estadísticas del partido
+    stats = load_fixture_stats(r["fixture_id"])
+    attack_factor = 1.0
 
 if stats:
     try:
@@ -687,17 +691,13 @@ if stats:
 
         # Normalización simple
         attack_factor += (
-            (home_sot + away_sot) * 0.015 +
-            (home_shots + away_shots) * 0.01 +
-            (home_corners + away_corners) * 0.008
+            (home_sot / max(home_shots, 1)) * 0.6 +
+            (away_sot / max(away_shots, 1)) * 0.6 +
+            ((home_corners + away_corners) / 10) * 0.2
         )
-
+       
     except:
         pass
-
-    # 📊 Cargar estadísticas reales
-stats = load_fixture_stats(r["fixture_id"])
-attack_factor = 1.0
 
 if stats:
     try:
@@ -720,10 +720,16 @@ if stats:
     edge = abs(ph - pa)
 
     priority = (
-    (edge * 10) +        # dominancia real
-    (goals * 1.5) +     # potencial de goles
-    (1 if 1.7 < h < 2.6 else 0)   # zona tradeable
+    (edge * 8) +            # ventaja real entre equipos
+    (goals * 1.5) +         # potencial de goles
+    (attack_factor * 2) +   # fuerza ofensiva real
+    (1 if 1.8 < h < 2.4 else 0)  # zona óptima de trading
     )
+    priority = (
+        (edge * 10) +        # dominancia real
+        (goals * 1.5) +     # potencial de goles
+        (1 if 1.7 < h < 2.6 else 0)   # zona tradeable
+        )
    
     matches_ranked.append({
         "match": f"{r.HomeTeam} vs {r.AwayTeam}",
