@@ -676,31 +676,30 @@ for _, r in df.iterrows():
 
     if stats:
         try:
-        teams = list(stats.values())
-        home_stats, away_stats = teams[0], teams[1]
+            teams = list(stats.values())
+            home_stats, away_stats = teams[0], teams[1]
 
-        # Extraer métricas ofensivas
-        home_sot = home_stats.get("Shots on Goal", 0) or 0
-        away_sot = away_stats.get("Shots on Goal", 0) or 0
+            # Extraer métricas ofensivas
+            home_sot = home_stats.get("Shots on Goal", 0) or 0
+            away_sot = away_stats.get("Shots on Goal", 0) or 0
 
-        home_shots = home_stats.get("Total Shots", 0) or 0
-        away_shots = away_stats.get("Total Shots", 0) or 0
+            home_shots = home_stats.get("Total Shots", 0) or 0
+            away_shots = away_stats.get("Total Shots", 0) or 0
 
-        home_corners = home_stats.get("Corner Kicks", 0) or 0
-        away_corners = away_stats.get("Corner Kicks", 0) or 0
+            home_corners = home_stats.get("Corner Kicks", 0) or 0
+            away_corners = away_stats.get("Corner Kicks", 0) or 0
 
-        # Normalización simple
-        attack_factor += (
-            (home_sot / max(home_shots, 1)) * 0.6 +
-            (away_sot / max(away_shots, 1)) * 0.6 +
-            ((home_corners + away_corners) / 10) * 0.2
-        )
-       
-    except:
-        pass
+            # Normalización simple
+            attack_factor += (
+                (home_sot / max(home_shots, 1)) * 0.6 +
+                (away_sot / max(away_shots, 1)) * 0.6 +
+                ((home_corners + away_corners) / 10) * 0.2
+            )
 
-
-
+        except:
+            pass
+    
+   
     # 🔥 USAR ODDS REALES EN EL MODELO
     ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, h, d, a, attack_factor)
 
