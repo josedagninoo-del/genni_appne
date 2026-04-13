@@ -37,8 +37,7 @@ def load_api_data():
         st.error(f"STATUS: {res.status_code}")
         st.error(f"RESPONSE LEN: {len(data.get('response', []))}")
 
-        st.write("ODDS RESPONSE:", data)
-        
+              
         rows = []
         for m in data.get("response", []):
             rows.append({
