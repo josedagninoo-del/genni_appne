@@ -675,7 +675,7 @@ for _, r in df.iterrows():
     attack_factor = 1.0
 
     if stats:
-        try:
+    try:
         teams = list(stats.values())
         home_stats, away_stats = teams[0], teams[1]
 
