@@ -577,7 +577,6 @@ def build_strategy(name):
         "entry": "-",
         "execution": "-"
     })
-
 # =========================================================
 # 🧠 CLASIFICACIÓN (BASE)
 # =========================================================
@@ -629,23 +628,14 @@ for _, r in df.iterrows():
     ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, r.H, r.D, r.A)
     label, score = classify_match(ph, pa, goals, r.H)
 
-    edge = abs(ph - pa)
-
-    priority_score = (
-        (edge * 5) +              # dominancia real
-        (goals * 1.5) +          # potencial de goles
-        (confidence * 0.5)       # calidad de mercado
-    )
-
     matches_ranked.append({
         "match": f"{r.HomeTeam} vs {r.AwayTeam}",
         "label": label,
-        "score": score,
-        "priority": priority_score
+        "score": score
     })
 
 # 🔥 Ordenar por score DESC (mejores primero)
-matches_ranked = sorted(matches_ranked, key=lambda x: x["priority"], reverse=True)
+matches_ranked = sorted(matches_ranked, key=lambda x: x["score"], reverse=True)
 
 # Reiniciar listas
 entradas, lectura, evitar = [], [], []
