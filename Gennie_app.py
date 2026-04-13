@@ -577,6 +577,8 @@ def build_strategy(name):
         "entry": "-",
         "execution": "-"
     })
+
+matches_ranked = [m for m in matches_ranked if m["priority"] >= 5]
 # =========================================================
 # 🧠 CLASIFICACIÓN (BASE)
 # =========================================================
@@ -644,7 +646,6 @@ for _, r in df.iterrows():
     })
 
 # 🔥 Ordenar por score DESC (mejores primero)
-matches_ranked = [m for m in matches_ranked if m["priority"] >= 5]
 matches_ranked = sorted(matches_ranked, key=lambda x: x["priority"], reverse=True)
 
 # Reiniciar listas
