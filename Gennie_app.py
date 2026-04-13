@@ -699,19 +699,13 @@ row = df.iloc[matches.index(selected)]
 # =========================================================
 # 💰 INTEGRAR ODDS REALES (AGREGADO)
 # =========================================================
-if "fixture_id" in row and pd.notna(row["fixture_id"]):
+if "fixture_id" in row and row["fixture_id"] in odds_map:
 
-    real_odds = load_real_odds(row["fixture_id"])
+    real = odds_map[row["fixture_id"]]
 
-    if real_odds:
-        h_real, d_real, a_real = real_odds
-
-        # 🔹 Solo reemplaza si hay datos válidos
-        if h_real and d_real and a_real:
-            row.H = h_real
-            row.D = d_real
-            row.A = a_real
-            st.success("💰 Odds reales cargadas")
+    if real and all(real):
+        row.H, row.D, row.A = real
+        st.success("💰 Odds reales cargadas")
 
 home, away = row.HomeTeam, row.AwayTeam
 
