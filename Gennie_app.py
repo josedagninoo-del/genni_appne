@@ -622,30 +622,36 @@ entradas, lectura, evitar = [], [], []
 # =========================================================
 # 🔥 RANKING DE PARTIDOS (AGREGADO)
 # =========================================================
-
 matches_ranked = []
 
 for _, r in df.iterrows():
-    ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, r.H, r.D, r.A)
-    label, score = classify_match(ph, pa, goals, r.H)
+    try:
+        ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, r.H, r.D, r.A)
 
-    edge = abs(ph - pa)
+        # 🔒 VALIDACIÓN (CLAVE)
+        if ph is None or pa is None or goals is None:
+            continue
 
-    priority = (
-        (edge * 5) +
-        (goals * 1.5)
-    )
+        label, score = classify_match(ph, pa, goals, r.H)
 
-    matches_ranked.append({
-        "match": f"{r.HomeTeam} vs {r.AwayTeam}",
-        "label": label,
-        "score": score,
-        "priority": priority
-    })
+        edge = abs(ph - pa)
 
+        priority = (edge * 5) + (goals * 1.5)
+
+        matches_ranked.append({
+            "match": f"{r.HomeTeam} vs {r.AwayTeam}",
+            "label": label,
+            "priority": priority
+        })
+
+    except Exception as e:
+        continue  # 🔒 evita que la app muera
 
 # 🔥 Ordenar por score DESC (mejores primero)
 matches_ranked = sorted(matches_ranked, key=lambda x: x["priority"], reverse=True)
+    if not matches_ranked:
+        st.warning("No hay partidos válidos tras el análisis")
+        st.stop()
 
 top_cut = int(len(matches_ranked) * 0.3)  # top 30%
 
