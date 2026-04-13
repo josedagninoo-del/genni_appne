@@ -706,6 +706,29 @@ for _, r in df.iterrows():
 
     label, score = classify_match(ph, pa, goals, h)
 
+    edge = abs(ph - pa)
+    strategy = "LECTURA"
+
+    # 🔥 FIREBALL — goles rápidos, favorito claro
+    if ph >= 0.60 and attack_factor >= 1.25 and goals >= 2.6 and 1.50 <= h <= 2.10:
+        strategy = "FIREBALL"
+
+    # 🧠 GENIE GAMBIT — partido abierto, parejo
+    elif abs(ph - pa) <= 0.20 and goals >= 2.4 and attack_factor >= 1.20 and 2.00 <= h <= 3.20:
+        strategy = "GAMBIT"
+
+    # 📉 LAY THE DIP — favorito inflado, baja producción
+    elif ph >= 0.65 and attack_factor <= 1.10 and goals <= 2.3 and h <= 1.60:
+        strategy = "LAY THE DIP"
+
+    # ⚡ MOMENTUM METHOD — dominio temprano del favorito
+    elif ph >= 0.58 and attack_factor >= 1.20 and goals < 2.7 and 1.60 <= h <= 2.30:
+        strategy = "MOMENTUM METHOD"
+
+    # 💪 POWER PLAY — favorito + empate con valor
+    elif ph >= 0.58 and 2.4 <= goals <= 2.8 and 0.10 <= edge <= 0.25 and 1.70 <= h <= 2.40:
+        strategy = "POWER PLAY"
+
     # ⛔ Filtro de calidad mínima
     if attack_factor < 1.15:
         continue
