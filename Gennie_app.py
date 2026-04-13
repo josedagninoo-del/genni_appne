@@ -669,6 +669,13 @@ for _, r in df.iterrows():
 matches_ranked = sorted(matches_ranked, key=lambda x: x["priority"], reverse=True)
 matches_ranked = [m for m in matches_ranked if m["score"] >= 5]
 
+bad_leagues = ["U17", "U20", "Youth", "Women"]
+
+matches_ranked = [
+    m for m in matches_ranked
+    if not any(x in m["league"] for x in bad_leagues)
+]
+
 # Reiniciar listas
 entradas, lectura, evitar = [], [], []
 
@@ -693,12 +700,7 @@ st.markdown("### 🔴 EVITAR")
 for m in evitar[:5]:
     st.write(m)
 
-bad_leagues = ["U17", "U20", "Youth", "Women"]
 
-matches_ranked = [
-    m for m in matches_ranked
-    if not any(x in m["league"] for x in bad_leagues)
-]
 # =========================================================
 # 🎯 SELECTOR
 # =========================================================
