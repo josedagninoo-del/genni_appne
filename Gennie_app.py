@@ -741,8 +741,11 @@ for _, r in df.iterrows():
     (attack_factor * 2) +   # fuerza ofensiva real
     (1 if 1.8 < h < 2.4 else 0)  # zona óptima de trading
     )
-       
-    matches_ranked.append({
+
+    # Penalizar partidos con cuotas demasiado parejas (poco movimiento)
+    if abs(h - a) < 0.15:
+        priority -= 1.5
+        matches_ranked.append({
         "match": f"{r.HomeTeam} vs {r.AwayTeam}",
         "league": r.Div,
         "label": label,
@@ -755,7 +758,7 @@ for _, r in df.iterrows():
 matches_ranked = sorted(matches_ranked, key=lambda x: x["priority"], reverse=True)
 matches_ranked = [m for m in matches_ranked if m["score"] >= 5]
 
-bad_leagues = ["U17", "U20", "Youth", "Women"]
+bad_leagues = ["U17", "U20", "Youth", "Women", "Friendly", "Reserves"]
 
 matches_ranked = [
     m for m in matches_ranked
@@ -830,8 +833,32 @@ if "fixture_id" in row and row["fixture_id"] in odds_map:
 
 home, away = row.HomeTeam, row.AwayTeam
 
+# 📊 recalcular attack_factor para el partido seleccionado
+stats = load_fixture_stats(row["fixture_id"])
+attack_factor = 1.0
+
+if stats:
+    try:
+        teams = list(stats.values())
+        home_stats, away_stats = teams[0], teams[1]
+
+        home_sot = home_stats.get("Shots on Goal", 0) or 0
+        away_sot = away_stats.get("Shots on Goal", 0) or 0
+        home_shots = home_stats.get("Total Shots", 0) or 0
+        away_shots = away_stats.get("Total Shots", 0) or 0
+        home_corners = home_stats.get("Corner Kicks", 0) or 0
+        away_corners = away_stats.get("Corner Kicks", 0) or 0
+
+        attack_factor += (
+            (home_sot / max(home_shots, 1)) * 0.6 +
+            (away_sot / max(away_shots, 1)) * 0.6 +
+            ((home_corners + away_corners) / 10) * 0.2
+        )
+    except:
+        pass
+
 ph, pa, goals, xg_h, xg_a, goals_trend, scoring, tactics, strategy, market, entry, exit, confidence = genie_analysis(
-    home, away, row.H, row.D, row.A
+    home, away, row.H, row.D, row.A, attack_factor
 )
 
 label, score = classify_match(ph, pa, goals, row.H)
@@ -842,7 +869,6 @@ context, tempo, execution = narrative_engine(home, away, ph, pa, goals, xg_h, xg
 # 🧠 SELECCIÓN REAL SIN JERARQUÍA
 # =========================================================
 best_strategy_name = select_best_strategy(home, away, ph, pa, goals, xg_h, xg_a)
-
 strategy_data = build_strategy(best_strategy_name)
 
 # =========================================================
