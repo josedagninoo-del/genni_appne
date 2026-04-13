@@ -10,6 +10,7 @@ st.title("🔥 GENIE PRO REAL — ELITE")
 # =========================================================
 import requests
 
+@st.cache_data(ttl=300)
 def load_api_data():
     try:
         API_KEY = st.secrets.get("API_KEY", "")
