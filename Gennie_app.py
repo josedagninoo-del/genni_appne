@@ -676,8 +676,8 @@ for _, r in df.iterrows():
 
     if stats:
         try:
-           teams = list(stats.values())
-           home_stats, away_stats = teams[0], teams[1]
+        teams = list(stats.values())
+        home_stats, away_stats = teams[0], teams[1]
 
         # Extraer métricas ofensivas
         home_sot = home_stats.get("Shots on Goal", 0) or 0
