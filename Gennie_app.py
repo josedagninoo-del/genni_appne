@@ -746,9 +746,7 @@ for _, r in df.iterrows():
         "label": label,
         "score": score,
         "priority": priority,
-        "strategy": strategy
-    })
- 
+    )}       
 
 # 🔥 Ordenar por score DESC (mejores primero)
 matches_ranked = sorted(matches_ranked, key=lambda x: x["priority"], reverse=True)
