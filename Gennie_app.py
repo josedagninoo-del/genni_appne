@@ -699,18 +699,18 @@ if stats:
         home_corners = safe_float(home_stats.get("Corner Kicks"))
         away_corners = safe_float(away_stats.get("Corner Kicks"))
 
-                           # ⚖️ Limitar influencia del ataque real
         attack_factor += min(
             (
                 (home_sot / max(home_shots, 1)) * 0.6 +
                 (away_sot / max(away_shots, 1)) * 0.6 +
                 ((home_corners + away_corners) / 10) * 0.2
-                ),
-                0.6
-         )
-         
-               except:
-                   pass
+            ),
+            0.6
+        )
+
+    except:
+        pass
+
             
     st.write(r["HomeTeam"], r["AwayTeam"], "AF:", round(attack_factor, 2))
    
