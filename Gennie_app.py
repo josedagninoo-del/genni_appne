@@ -686,6 +686,9 @@ def safe_float(x):
         return 0.0
 
 if stats:
+    stats_available = True
+else:
+    stats_available = False    
     try:
         teams = list(stats.values())
         home_stats, away_stats = teams[0], teams[1]
@@ -743,7 +746,7 @@ if stats:
         strategy = "POWER PLAY"
 
     # ⛔ Filtro de calidad mínima
-    if attack_factor < 1.15:
+    if stats_available and attack_factor < 1.15:
         st.warning("Partido con bajo volumen ofensivo")
 
     edge = abs(ph - pa)
