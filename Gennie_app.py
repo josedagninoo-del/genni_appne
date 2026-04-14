@@ -685,10 +685,10 @@ for _, r in df.iterrows():
     # 📊 Cargar estadísticas del partido
     stats = load_fixture_stats(r["fixture_id"])
     if not stats:
-    st.warning(f"Sin stats: {r['HomeTeam']} vs {r['AwayTeam']}")
-    home_attack = 1.0
-    away_attack = 1.0
-    attack_factor = 1.0
+        st.warning(f"Sin stats: {r['HomeTeam']} vs {r['AwayTeam']}")
+        home_attack = 1.0
+        away_attack = 1.0
+        attack_factor = 1.0
    
     if stats:
         try:
