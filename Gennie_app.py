@@ -106,7 +106,7 @@ def load_all_odds():
                             away = vals.get("Away")
 
                         # ✅ Over 2.5
-                       if bet["name"] == "Goals Over/Under":
+                        if bet["name"] == "Goals Over/Under":
                            for v in bet["values"]:
                                if v["value"] == "Over 2.5":
                                    over25 = float(v["odd"])
