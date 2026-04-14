@@ -89,15 +89,36 @@ def load_all_odds():
         odds_map = {}
 
         for match in data.get("response", []):
-            fid = match["fixture"]["id"]
-            try:
-                for b in match["bookmakers"]:
-                    for bet in b["bets"]:
-                        if bet["name"] == "Match Winner":
-                            vals = {v["value"]: float(v["odd"]) for v in bet["values"]}
-                            odds_map[fid] = (vals.get("Home"), vals.get("Draw"), vals.get("Away"))
-            except:
-                continue
+    fid = match["fixture"]["id"]
+
+    home = None
+    draw = None
+    away = None
+    over25 = None
+
+    try:
+        for b in match.get("bookmakers", []):
+            for bet in b.get("bets", []):
+
+                if bet.get("name") == "Match Winner":
+                    for v in bet.get("values", []):
+                        if v.get("value") == "Home":
+                            home = float(v.get("odd"))
+                        elif v.get("value") == "Draw":
+                            draw = float(v.get("odd"))
+                        elif v.get("value") == "Away":
+                            away = float(v.get("odd"))
+
+                if bet.get("name") == "Goals Over/Under":
+                    for v in bet.get("values", []):
+                        if v.get("value") == "Over 2.5":
+                            over25 = float(v.get("odd"))
+
+        odds_map[fid] = (home, draw, away, over25)
+
+    except:
+        continue
+       
 
         return odds_map
     except:
@@ -675,7 +696,7 @@ for _, r in df.iterrows():
     if not real or not all(real):
         continue
 
-    h, d, a = real
+    h, d, a, o25 = real
     # 📊 Cargar estadísticas del partido
     stats = load_fixture_stats(r["fixture_id"])
     attack_factor = 1.0
