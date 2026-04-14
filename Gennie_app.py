@@ -159,7 +159,7 @@ if df is None or df.empty:
 # =========================================================
 # 🧠 ENGINE BASE (NO TOCAR)
 # =========================================================
-def genie_analysis(home, away, h, d, a, home_attack=1.0, away_attack=1.0):
+def genie_analysis(home, away, h, d, a, attack_factor=1.0):
 
     imp_h = 1 / h
     imp_d = 1 / d
@@ -170,12 +170,11 @@ def genie_analysis(home, away, h, d, a, home_attack=1.0, away_attack=1.0):
     pa = imp_a / overround
 
     # 📉 Suavizar impacto del ataque
-    scaled_attack = 1 + (((home_attack + away_attack) / 2 - 1) * 0.55)
+    scaled_attack = 1 + (attack_factor - 1) * 0.55
     total_goals = (2.4 + (abs(h - a) * 0.6)) * scaled_attack
        
-    xg_home = round(total_goals * ph * home_attack, 2)
-    xg_away = round(total_goals * pa * away_attack, 2)
-   
+    xg_home = round(total_goals * ph, 2)
+    xg_away = round(total_goals * pa, 2)
 
     # 🔒 Limitar xG a valores realistas
     xg_home = min(xg_home, 3.8)
@@ -664,11 +663,6 @@ entradas, lectura, evitar = [], [], []
 # =========================================================
 # 🔥 RANKING DE PARTIDOS (AGREGADO)
 # =========================================================
-def safe_float(x):
-    try:
-        return float(str(x).replace("%", ""))
-    except:
-        return 0.0
 matches_ranked = []
 
 for _, r in df.iterrows():
@@ -684,51 +678,44 @@ for _, r in df.iterrows():
     h, d, a = real
     # 📊 Cargar estadísticas del partido
     stats = load_fixture_stats(r["fixture_id"])
-    if not stats:
-        st.warning(f"Sin stats: {r['HomeTeam']} vs {r['AwayTeam']}")
-        home_attack = 1.0
-        away_attack = 1.0
-        attack_factor = 1.0
-   
-    if stats:
-        try:
-            teams = list(stats.values())
-            home_stats, away_stats = teams[0], teams[1]
+    attack_factor = 1.0
+def safe_float(x):
+    try:
+        return float(str(x).replace("%", ""))
+    except:
+        return 0.0
 
-            home_sot = safe_float(home_stats.get("Shots on Goal"))
-            away_sot = safe_float(away_stats.get("Shots on Goal"))
+if stats:
+    try:
+        teams = list(stats.values())
+        home_stats, away_stats = teams[0], teams[1]
 
-            home_shots = safe_float(home_stats.get("Total Shots"))
-            away_shots = safe_float(away_stats.get("Total Shots"))
+        home_sot = safe_float(home_stats.get("Shots on Goal"))
+        away_sot = safe_float(away_stats.get("Shots on Goal"))
 
-            home_corners = safe_float(home_stats.get("Corner Kicks"))
-            away_corners = safe_float(away_stats.get("Corner Kicks"))
+        home_shots = safe_float(home_stats.get("Total Shots"))
+        away_shots = safe_float(away_stats.get("Total Shots"))
 
-            home_attack += min(
-                (
-            (home_sot / max(home_shots, 1)) * 0.7 +
-            (home_corners / 5) * 0.3
-                ),
-                0.6
-            )
+        home_corners = safe_float(home_stats.get("Corner Kicks"))
+        away_corners = safe_float(away_stats.get("Corner Kicks"))
 
-            away_attack += min(
-                (
-            (away_sot / max(away_shots, 1)) * 0.7 +
-            (away_corners / 5) * 0.3
-                 ),
-                0.6
-            )
-            attack_factor = (home_attack + away_attack) / 2
+        attack_factor += min(
+            (
+                (home_sot / max(home_shots, 1)) * 0.6 +
+                (away_sot / max(away_shots, 1)) * 0.6 +
+                ((home_corners + away_corners) / 10) * 0.2
+            ),
+            0.6
+        )
 
-        except:
-            pass
+    except:
+        pass
 
             
     st.write(r["HomeTeam"], r["AwayTeam"], "AF:", round(attack_factor, 2))
    
     # 🔥 USAR ODDS REALES EN EL MODELO
-    ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, h, d, a, home_attack, away_attack)
+    ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, h, d, a, attack_factor)
 
     label, score = classify_match(ph, pa, goals, h)
 
