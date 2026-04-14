@@ -681,7 +681,7 @@ for _, r in df.iterrows():
     stats = load_fixture_stats(r["fixture_id"])
     home_attack = 1.0
     away_attack = 1.0
-    def safe_float(x):
+def safe_float(x):
     try:
         return float(str(x).replace("%", ""))
     except:
