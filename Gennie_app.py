@@ -679,21 +679,38 @@ for _, r in df.iterrows():
     # 📊 Cargar estadísticas del partido
     stats = load_fixture_stats(r["fixture_id"])
     attack_factor = 1.0
-
 def safe_float(x):
     try:
         return float(str(x).replace("%", ""))
     except:
         return 0.0
 
-home_sot = safe_float(home_stats.get("Shots on Goal"))
-away_sot = safe_float(away_stats.get("Shots on Goal"))
+if stats:
+    try:
+        teams = list(stats.values())
+        home_stats, away_stats = teams[0], teams[1]
 
-home_shots = safe_float(home_stats.get("Total Shots"))
-away_shots = safe_float(away_stats.get("Total Shots"))
+        home_sot = safe_float(home_stats.get("Shots on Goal"))
+        away_sot = safe_float(away_stats.get("Shots on Goal"))
 
-home_corners = safe_float(home_stats.get("Corner Kicks"))
-away_corners = safe_float(away_stats.get("Corner Kicks"))if stats:
+        home_shots = safe_float(home_stats.get("Total Shots"))
+        away_shots = safe_float(away_stats.get("Total Shots"))
+
+        home_corners = safe_float(home_stats.get("Corner Kicks"))
+        away_corners = safe_float(away_stats.get("Corner Kicks"))
+
+        attack_factor += min(
+            (
+                (home_sot / max(home_shots, 1)) * 0.6 +
+                (away_sot / max(away_shots, 1)) * 0.6 +
+                ((home_corners + away_corners) / 10) * 0.2
+            ),
+            0.6
+        )
+
+    except:
+        pass
+
                    # ⚖️ Limitar influencia del ataque real
             attack_factor += min(
                 (
@@ -844,28 +861,38 @@ home, away = row.HomeTeam, row.AwayTeam
 # 📊 recalcular attack_factor para el partido seleccionado
 stats = load_fixture_stats(row["fixture_id"])
 attack_factor = 1.0
-
 def safe_float(x):
     try:
         return float(str(x).replace("%", ""))
     except:
         return 0.0
-home_sot = safe_float(home_stats.get("Shots on Goal"))
-away_sot = safe_float(away_stats.get("Shots on Goal"))
 
-home_shots = safe_float(home_stats.get("Total Shots"))
-away_shots = safe_float(away_stats.get("Total Shots"))
+if stats:
+    try:
+        teams = list(stats.values())
+        home_stats, away_stats = teams[0], teams[1]
 
-home_corners = safe_float(home_stats.get("Corner Kicks"))
-away_corners = safe_float(away_stats.get("Corner Kicks"))
+        home_sot = safe_float(home_stats.get("Shots on Goal"))
+        away_sot = safe_float(away_stats.get("Shots on Goal"))
 
-        attack_factor += (
-            (home_sot / max(home_shots, 1)) * 0.6 +
-            (away_sot / max(away_shots, 1)) * 0.6 +
-            ((home_corners + away_corners) / 10) * 0.2
+        home_shots = safe_float(home_stats.get("Total Shots"))
+        away_shots = safe_float(away_stats.get("Total Shots"))
+
+        home_corners = safe_float(home_stats.get("Corner Kicks"))
+        away_corners = safe_float(away_stats.get("Corner Kicks"))
+
+        attack_factor += min(
+            (
+                (home_sot / max(home_shots, 1)) * 0.6 +
+                (away_sot / max(away_shots, 1)) * 0.6 +
+                ((home_corners + away_corners) / 10) * 0.2
+            ),
+            0.6
         )
+
     except:
         pass
+
 
 ph, pa, goals, xg_h, xg_a, goals_trend, scoring, tactics, strategy, market, entry, exit, confidence = genie_analysis(
     home, away, row.H, row.D, row.A, attack_factor
