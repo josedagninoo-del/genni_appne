@@ -664,6 +664,11 @@ entradas, lectura, evitar = [], [], []
 # =========================================================
 # 🔥 RANKING DE PARTIDOS (AGREGADO)
 # =========================================================
+def safe_float(x):
+    try:
+        return float(str(x).replace("%", ""))
+    except:
+        return 0.0
 matches_ranked = []
 
 for _, r in df.iterrows():
@@ -681,45 +686,40 @@ for _, r in df.iterrows():
     stats = load_fixture_stats(r["fixture_id"])
     home_attack = 1.0
     away_attack = 1.0
-def safe_float(x):
-    try:
-        return float(str(x).replace("%", ""))
-    except:
-        return 0.0
+   
+    if stats:
+        try:
+            teams = list(stats.values())
+            home_stats, away_stats = teams[0], teams[1]
 
-if stats:
-    try:
-        teams = list(stats.values())
-        home_stats, away_stats = teams[0], teams[1]
+            home_sot = safe_float(home_stats.get("Shots on Goal"))
+            away_sot = safe_float(away_stats.get("Shots on Goal"))
 
-        home_sot = safe_float(home_stats.get("Shots on Goal"))
-        away_sot = safe_float(away_stats.get("Shots on Goal"))
+            home_shots = safe_float(home_stats.get("Total Shots"))
+            away_shots = safe_float(away_stats.get("Total Shots"))
 
-        home_shots = safe_float(home_stats.get("Total Shots"))
-        away_shots = safe_float(away_stats.get("Total Shots"))
+            home_corners = safe_float(home_stats.get("Corner Kicks"))
+            away_corners = safe_float(away_stats.get("Corner Kicks"))
 
-        home_corners = safe_float(home_stats.get("Corner Kicks"))
-        away_corners = safe_float(away_stats.get("Corner Kicks"))
+            home_attack += min(
+                (
+            (home_sot / max(home_shots, 1)) * 0.7 +
+            (home_corners / 5) * 0.3
+                ),
+                0.6
+            )
 
-        home_attack += min(
-            (
-        (home_sot / max(home_shots, 1)) * 0.7 +
-        (home_corners / 5) * 0.3
-            ),
-            0.6
-        )
+            away_attack += min(
+                (
+            (away_sot / max(away_shots, 1)) * 0.7 +
+            (away_corners / 5) * 0.3
+                 ),
+                0.6
+            )
+            attack_factor = (home_attack + away_attack) / 2
 
-        away_attack += min(
-            (
-        (away_sot / max(away_shots, 1)) * 0.7 +
-        (away_corners / 5) * 0.3
-             ),
-            0.6
-        )
-        attack_factor = (home_attack + away_attack) / 2
-
-    except:
-        pass
+        except:
+            pass
 
             
     st.write(r["HomeTeam"], r["AwayTeam"], "AF:", round(attack_factor, 2))
