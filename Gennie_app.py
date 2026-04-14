@@ -886,7 +886,7 @@ if stats:
 
 
 ph, pa, goals, xg_h, xg_a, goals_trend, scoring, tactics, strategy, market, entry, exit, confidence = genie_analysis(
-    home, away, row.H, row.D, row.A, attack_factor
+    home, away, row.H, row.D, row.A, attack_factor, over25, under25
 )
 
 label, score = classify_match(ph, pa, goals, row.H)
@@ -1019,6 +1019,7 @@ if "LAY THE DIP" in final_strategy["name"].upper():
     st.markdown("""
 **📌 Strategy Summary:** If the early stages of the match are goalless, the price of Under 2.5 goals will dip, creating a prime moment to lay.  
 With a high likelihood of early goals, there’s solid value capturing these price swings.
+
 **📊 Market to Trade:**Lay Under 2.5 Goals  
 **🎯 Strategy Style:**Lay to Back  
 **⏱ Market Entry Timing:** Minute 10 → 50% stake  Minute 25  remaining 50% if still 0-0  
