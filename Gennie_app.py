@@ -90,34 +90,16 @@ def load_all_odds():
 
         for match in data.get("response", []):
             fid = match["fixture"]["id"]
-
-            home = draw = away = None
-            over25 = None
-
             try:
                 for b in match["bookmakers"]:
                     for bet in b["bets"]:
-
-                        # ✅ Match Winner
                         if bet["name"] == "Match Winner":
                             vals = {v["value"]: float(v["odd"]) for v in bet["values"]}
-                            home = vals.get("Home")
-                            draw = vals.get("Draw")
-                            away = vals.get("Away")
-
-                        # ✅ Over 2.5
-                        if bet["name"] == "Goals Over/Under":
-                           for v in bet["values"]:
-                               if v["value"] == "Over 2.5":
-                                   over25 = float(v["odd"])
-
-            odds_map[fid] = (home, draw, away, over25)
-
+                            odds_map[fid] = (vals.get("Home"), vals.get("Draw"), vals.get("Away"))
             except:
-               continue
-               
-               
-    return odds_map
+                continue
+
+        return odds_map
     except:
         return {}
         
@@ -177,7 +159,7 @@ if df is None or df.empty:
 # =========================================================
 # 🧠 ENGINE BASE (NO TOCAR)
 # =========================================================
-def genie_analysis(home, away, h, d, a, attack_factor=1.0, o25=None):
+def genie_analysis(home, away, h, d, a, attack_factor=1.0):
 
     imp_h = 1 / h
     imp_d = 1 / d
@@ -189,19 +171,7 @@ def genie_analysis(home, away, h, d, a, attack_factor=1.0, o25=None):
 
     # 📉 Suavizar impacto del ataque
     scaled_attack = 1 + (attack_factor - 1) * 0.55
-    market_goals = 2.5
-
-    if o25:
-        if o25 < 1.80:
-            market_goals = 2.9
-        elif o25 < 2.00:
-            market_goals = 2.7
-        elif o25 < 2.20:
-            market_goals = 2.5
-        else:
-            market_goals = 2.3
-
-    total_goals = (market_goals + (abs(h - a) * 0.4)) * scaled_attack
+    total_goals = (2.4 + (abs(h - a) * 0.6)) * scaled_attack
        
     xg_home = round(total_goals * ph, 2)
     xg_away = round(total_goals * pa, 2)
@@ -702,10 +672,10 @@ for _, r in df.iterrows():
         continue
 
     real = odds_map[r["fixture_id"]]
-    if not real or not all(real[:3]):
-         continue
-    
-    h, d, a, o25 = real
+    if not real or not all(real):
+        continue
+
+    h, d, a = real
     # 📊 Cargar estadísticas del partido
     stats = load_fixture_stats(r["fixture_id"])
     attack_factor = 1.0
@@ -745,7 +715,7 @@ if stats:
     st.write(r["HomeTeam"], r["AwayTeam"], "AF:", round(attack_factor, 2))
    
     # 🔥 USAR ODDS REALES EN EL MODELO
-    ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, h, d, a, attack_factor, o25)
+    ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, h, d, a, attack_factor)
 
     label, score = classify_match(ph, pa, goals, h)
 
