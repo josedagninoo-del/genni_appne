@@ -886,7 +886,7 @@ if stats:
 
 
 ph, pa, goals, xg_h, xg_a, goals_trend, scoring, tactics, strategy, market, entry, exit, confidence = genie_analysis(
-    home, away, row.H, row.D, row.A, attack_factor, over25, under25
+    home, away, row.H, row.D, row.A, attack_factor
 )
 
 label, score = classify_match(ph, pa, goals, row.H)
