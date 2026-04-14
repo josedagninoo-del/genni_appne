@@ -709,8 +709,8 @@ if stats:
                 0.6
          )
          
-     except:
-         pass
+except:
+   pass
             
     st.write(r["HomeTeam"], r["AwayTeam"], "AF:", round(attack_factor, 2))
    
