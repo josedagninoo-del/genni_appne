@@ -731,25 +731,7 @@ for _, r in df.iterrows():
 
     edge = abs(ph - pa)
 
-    # 🔥 ESTRATEGIA REAL
-    if over25 and over25 < 1.80 and btts and btts < 1.75:
-        strategy = "FIREBALL"
-
-    elif over25 and over25 < 1.90 and edge < 0.15:
-        strategy = "LAY THE DIP"
-
-    elif ph > 0.60 and (not over25 or over25 > 1.95):
-        strategy = "MOMENTUM METHOD"
-
-    elif ph > 0.58 and 1.80 <= h <= 2.30 and over25 and over25 < 2.10:
-        strategy = "POWER PLAY"
-
-    elif ph > 0.60 and over25 and over25 < 1.85:
-        strategy = "GENIE GAMBIT 2.0"
-
-    else:
-        strategy = "NO TRADE"
-
+    
     label, score = classify_match(ph, pa, goals, h)
 
     priority = (
