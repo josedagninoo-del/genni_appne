@@ -169,10 +169,16 @@ def genie_analysis(home, away, h, d, a, attack_factor=1.0):
     ph = imp_h / overround
     pa = imp_a / overround
 
-    total_goals = (2.4 + (abs(h - a) * 0.6)) * attack_factor
-    
+    # 📉 Suavizar impacto del ataque
+    scaled_attack = 1 + (attack_factor - 1) * 0.55
+    total_goals = (2.4 + (abs(h - a) * 0.6)) * scaled_attack
+       
     xg_home = round(total_goals * ph, 2)
     xg_away = round(total_goals * pa, 2)
+
+    # 🔒 Limitar xG a valores realistas
+    xg_home = min(xg_home, 3.8)
+    xg_away = min(xg_away, 3.8)
 
     if total_goals > 2.8:
         goals_trend = "Alta tendencia a Over 2.5"
@@ -689,13 +695,16 @@ for _, r in df.iterrows():
             home_corners = home_stats.get("Corner Kicks", 0) or 0
             away_corners = away_stats.get("Corner Kicks", 0) or 0
 
-            # Normalización simple
-            attack_factor += (
-                (home_sot / max(home_shots, 1)) * 0.6 +
-                (away_sot / max(away_shots, 1)) * 0.6 +
-                ((home_corners + away_corners) / 10) * 0.2
+            # ⚖️ Limitar influencia del ataque real
+            attack_factor += min(
+                (
+                     (home_sot / max(home_shots, 1)) * 0.6 +
+                     (away_sot / max(away_shots, 1)) * 0.6 +
+                     ((home_corners + away_corners) / 10) * 0.2
+                ),
+                0.6
             )
-
+         
         except:
             pass
             
