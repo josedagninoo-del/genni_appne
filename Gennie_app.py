@@ -170,7 +170,7 @@ def genie_analysis(home, away, h, d, a, home_attack=1.0, away_attack=1.0):
     pa = imp_a / overround
 
     # 📉 Suavizar impacto del ataque
-    scaled_attack = 1 + (attack_factor - 1) * 0.55
+    scaled_attack = 1 + (((home_attack + away_attack) / 2 - 1) * 0.55)
     total_goals = (2.4 + (abs(h - a) * 0.6)) * scaled_attack
        
     xg_home = round(total_goals * ph * home_attack, 2)
@@ -686,6 +686,7 @@ for _, r in df.iterrows():
     stats = load_fixture_stats(r["fixture_id"])
     home_attack = 1.0
     away_attack = 1.0
+    attack_factor = 1.0
    
     if stats:
         try:
