@@ -845,7 +845,6 @@ if "fixture_id" in row and row["fixture_id"] in odds_map:
         row.H = real["home"]
         row.D = real["draw"]
         row.A = real["away"]
-        row.H, row.D, row.A = real
         st.success("💰 Odds reales cargadas")
 
 home, away = row.HomeTeam, row.AwayTeam
