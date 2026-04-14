@@ -744,7 +744,7 @@ if stats:
 
     # ⛔ Filtro de calidad mínima
     if attack_factor < 1.15:
-        continue
+        st.warning("Partido con bajo volumen ofensivo")
 
     edge = abs(ph - pa)
 
