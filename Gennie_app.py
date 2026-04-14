@@ -111,7 +111,7 @@ def load_all_odds():
                                if v["value"] == "Over 2.5":
                                    over25 = float(v["odd"])
 
-              odds_map[fid] = (home, draw, away, over25)
+             odds_map[fid] = (home, draw, away, over25)
 
            except:
               continue
