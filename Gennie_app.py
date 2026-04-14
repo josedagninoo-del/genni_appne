@@ -90,18 +90,42 @@ def load_all_odds():
 
         for match in data.get("response", []):
             fid = match["fixture"]["id"]
+
+            odds_map[fid] = {}
+
             try:
-                for b in match["bookmakers"]:
-                    for bet in b["bets"]:
-                        if bet["name"] == "Match Winner":
-                            vals = {v["value"]: float(v["odd"]) for v in bet["values"]}
-                            odds_map[fid] = (vals.get("Home"), vals.get("Draw"), vals.get("Away"))
+                for b in match.get("bookmakers", []):
+                    for bet in b.get("bets", []):
+
+                        if bet.get("name") == "Match Winner":
+                            for v in bet.get("values", []):
+                                if v["value"] == "Home":
+                                    odds_map[fid]["home"] = float(v["odd"])
+                                elif v["value"] == "Draw":
+                                    odds_map[fid]["draw"] = float(v["odd"])
+                                elif v["value"] == "Away":
+                                    odds_map[fid]["away"] = float(v["odd"])
+
+                        elif bet.get("name") == "Goals Over/Under":
+                            for v in bet.get("values", []):
+                                if v["value"] == "Over 2.5":
+                                    odds_map[fid]["over25"] = float(v["odd"])
+                                elif v["value"] == "Under 2.5":
+                                    odds_map[fid]["under25"] = float(v["odd"])
+
+                        elif bet.get("name") == "Both Teams Score":
+                            for v in bet.get("values", []):
+                                if v["value"] == "Yes":
+                                    odds_map[fid]["btts"] = float(v["odd"])
+
             except:
                 continue
 
         return odds_map
+
     except:
         return {}
+
         
 @st.cache_data(ttl=300)
 def load_fixture_stats(fixture_id):
@@ -667,106 +691,80 @@ matches_ranked = []
 
 for _, r in df.iterrows():
 
-    # ⛔ SI NO HAY ODDS REALES → DESCARTAR DEL RANKING
     if r["fixture_id"] not in odds_map:
         continue
 
     real = odds_map[r["fixture_id"]]
-    if not real or not all(real):
+
+    h = real.get("home")
+    d = real.get("draw")
+    a = real.get("away")
+    over25 = real.get("over25")
+    under25 = real.get("under25")
+    btts = real.get("btts")
+
+    if not h or not d or not a:
         continue
 
-    h, d, a = real
-    # 📊 Cargar estadísticas del partido
-    stats = load_fixture_stats(r["fixture_id"])
-    attack_factor = 1.0
-def safe_float(x):
-    try:
-        return float(str(x).replace("%", ""))
-    except:
-        return 0.0
+    # 🔥 MARKET GOALS (CLAVE)
+    market_goals = 2.4
 
-if stats:
-    stats_available = True
-else:
-    stats_available = False    
-    try:
-        teams = list(stats.values())
-        home_stats, away_stats = teams[0], teams[1]
+    if over25 and under25:
+        prob_over = 1 / over25
+        prob_under = 1 / under25
+        total = prob_over + prob_under
 
-        home_sot = safe_float(home_stats.get("Shots on Goal"))
-        away_sot = safe_float(away_stats.get("Shots on Goal"))
+        prob_over /= total
+        market_goals = 2.2 + (prob_over * 1.2)
 
-        home_shots = safe_float(home_stats.get("Total Shots"))
-        away_shots = safe_float(away_stats.get("Total Shots"))
+    # 🔥 attack_factor basado en mercado
+    attack_factor = market_goals / 2.4
 
-        home_corners = safe_float(home_stats.get("Corner Kicks"))
-        away_corners = safe_float(away_stats.get("Corner Kicks"))
+    ph, pa, goals, *_ = genie_analysis(
+        r.HomeTeam,
+        r.AwayTeam,
+        h,
+        d,
+        a,
+        attack_factor
+    )
 
-        attack_factor += min(
-            (
-                (home_sot / max(home_shots, 1)) * 0.6 +
-                (away_sot / max(away_shots, 1)) * 0.6 +
-                ((home_corners + away_corners) / 10) * 0.2
-            ),
-            0.6
-        )
+    edge = abs(ph - pa)
 
-    except:
-        pass
+    # 🔥 ESTRATEGIA REAL
+    if over25 and over25 < 1.80 and btts and btts < 1.75:
+        strategy = "FIREBALL"
 
-            
-    st.write(r["HomeTeam"], r["AwayTeam"], "AF:", round(attack_factor, 2))
-   
-    # 🔥 USAR ODDS REALES EN EL MODELO
-    ph, pa, goals, *_ = genie_analysis(r.HomeTeam, r.AwayTeam, h, d, a, attack_factor)
+    elif over25 and over25 < 1.90 and edge < 0.15:
+        strategy = "LAY THE DIP"
+
+    elif ph > 0.60 and (not over25 or over25 > 1.95):
+        strategy = "MOMENTUM METHOD"
+
+    elif ph > 0.58 and 1.80 <= h <= 2.30 and over25 and over25 < 2.10:
+        strategy = "POWER PLAY"
+
+    elif ph > 0.60 and over25 and over25 < 1.85:
+        strategy = "GENIE GAMBIT 2.0"
+
+    else:
+        strategy = "NO TRADE"
 
     label, score = classify_match(ph, pa, goals, h)
 
-    edge = abs(ph - pa)
-    strategy = "LECTURA"
-
-    # 🔥 FIREBALL — goles rápidos, favorito claro
-    if ph >= 0.60 and attack_factor >= 1.25 and goals >= 2.6 and 1.50 <= h <= 2.10:
-        strategy = "FIREBALL"
-
-    # 🧠 GENIE GAMBIT — partido abierto, parejo
-    elif abs(ph - pa) <= 0.20 and goals >= 2.4 and attack_factor >= 1.20 and 2.00 <= h <= 3.20:
-        strategy = "GAMBIT"
-
-    # 📉 LAY THE DIP — favorito inflado, baja producción
-    elif ph >= 0.65 and attack_factor <= 1.10 and goals <= 2.3 and h <= 1.60:
-        strategy = "LAY THE DIP"
-
-    # ⚡ MOMENTUM METHOD — dominio temprano del favorito
-    elif ph >= 0.58 and attack_factor >= 1.20 and goals < 2.7 and 1.60 <= h <= 2.30:
-        strategy = "MOMENTUM METHOD"
-
-    # 💪 POWER PLAY — favorito + empate con valor
-    elif ph >= 0.58 and 2.4 <= goals <= 2.8 and 0.10 <= edge <= 0.25 and 1.70 <= h <= 2.40:
-        strategy = "POWER PLAY"
-
-    # ⛔ Filtro de calidad mínima
-    if stats_available and attack_factor < 1.15:
-        st.warning("Partido con bajo volumen ofensivo")
-
-    edge = abs(ph - pa)
-
     priority = (
-    (edge * 8) +            # ventaja real entre equipos
-    (goals * 1.5) +         # potencial de goles
-    (attack_factor * 2) +   # fuerza ofensiva real
-    (1 if 1.8 < h < 2.4 else 0)  # zona óptima de trading
+        (edge * 8) +
+        (goals * 1.5) +
+        (attack_factor * 2)
     )
 
-    # Penalizar partidos con cuotas demasiado parejas (poco movimiento)
-    if abs(h - a) < 0.15:
-        priority -= 1.5
-        matches_ranked.append({
+    matches_ranked.append({
         "match": f"{r.HomeTeam} vs {r.AwayTeam}",
         "league": r.Div,
         "label": label,
         "score": score,
-        "priority": priority
+        "priority": priority,
+        "strategy": strategy
     })
  
 
@@ -843,7 +841,10 @@ if "fixture_id" in row and row["fixture_id"] in odds_map:
 
     real = odds_map[row["fixture_id"]]
 
-    if real and all(real):
+    if real and real.get("home") and real.get("draw") and real.get("away"):
+        row.H = real["home"]
+        row.D = real["draw"]
+        row.A = real["away"]
         row.H, row.D, row.A = real
         st.success("💰 Odds reales cargadas")
 
