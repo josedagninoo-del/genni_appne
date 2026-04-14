@@ -680,20 +680,20 @@ for _, r in df.iterrows():
     stats = load_fixture_stats(r["fixture_id"])
     attack_factor = 1.0
 
-    def safe_float(x):
+def safe_float(x):
     try:
         return float(str(x).replace("%", ""))
     except:
         return 0.0
 
-    home_sot = safe_float(home_stats.get("Shots on Goal"))
-    away_sot = safe_float(away_stats.get("Shots on Goal"))
+home_sot = safe_float(home_stats.get("Shots on Goal"))
+away_sot = safe_float(away_stats.get("Shots on Goal"))
 
-    home_shots = safe_float(home_stats.get("Total Shots"))
-    away_shots = safe_float(away_stats.get("Total Shots"))
+home_shots = safe_float(home_stats.get("Total Shots"))
+away_shots = safe_float(away_stats.get("Total Shots"))
 
-    home_corners = safe_float(home_stats.get("Corner Kicks"))
-    away_corners = safe_float(away_stats.get("Corner Kicks"))if stats:
+home_corners = safe_float(home_stats.get("Corner Kicks"))
+away_corners = safe_float(away_stats.get("Corner Kicks"))if stats:
                    # ⚖️ Limitar influencia del ataque real
             attack_factor += min(
                 (
